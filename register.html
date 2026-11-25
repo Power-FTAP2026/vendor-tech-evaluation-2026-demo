@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Registration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top" data-page="register" data-sub="Registration"></header>
+  <main>
+    <div id="msg"></div>
+    <ol class="steps" id="steps" aria-label="Registration steps">
+      <li class="current"><span>Your details</span></li><li><span>Review</span></li><li><span>Done</span></li>
+    </ol>
+    <form id="form" class="card">
+      <div class="title-row"><span class="title-icon"><i data-icon="user" data-size="22"></i></span>
+        <div><h2>Attendance Registration</h2><p class="lead">Fill in your details exactly as they appear on your ID.</p></div></div>
+
+      <h3 class="sec"><i data-icon="building" data-size="16"></i> Company &amp; employment</h3>
+      <div class="grid2">
+        <div><label for="company">Company <span class="req">*</span></label>
+          <select id="company" required><option value="">— select —</option></select></div>
+        <div><label for="employment">Employment <span class="req">*</span></label>
+          <select id="employment" required><option value="">— select —</option></select></div>
+      </div>
+
+      <h3 class="sec"><i data-icon="user" data-size="16"></i> Your name</h3>
+      <div class="grid3">
+        <div><label for="surname">Surname <span class="req">*</span></label><input id="surname" required autocomplete="family-name" /></div>
+        <div><label for="firstName">First Name <span class="req">*</span></label><input id="firstName" required autocomplete="given-name" /></div>
+        <div><label for="mi">M.I.</label><input id="mi" maxlength="3" placeholder="e.g. P" /></div>
+      </div>
+
+      <h3 class="sec"><i data-icon="wrench" data-size="16"></i> Role &amp; location</h3>
+      <label for="role">Role <span class="req">*</span></label>
+      <select id="role" required><option value="">— select —</option></select>
+      <div id="roleOtherBox" class="hidden">
+        <label for="roleOther">Please specify your role <span class="req">*</span></label>
+        <input id="roleOther" maxlength="40" placeholder="e.g. Electrician, Site Supervisor" autocomplete="organization-title" />
+      </div>
+
+      <div class="grid2">
+        <div><label for="area">Area <span class="req">*</span></label><select id="area" required><option value="">— select —</option></select></div>
+        <div><label for="region">Region <span class="req">*</span></label><select id="region" required><option value="">— select —</option></select></div>
+      </div>
+
+      <h3 class="sec"><i data-icon="camera" data-size="16"></i> ID picture <span class="req">*</span></h3>
+      <p class="photo-hint">Take a clear photo of your company ID or a valid government ID.</p>
+      <div class="photo-box" id="photoBox">
+        <div class="photo-actions" id="photoActions">
+          <button type="button" class="btn" id="camBtn"><i data-icon="camera"></i> Take Photo</button>
+          <label class="btn secondary" for="fileInput"><i data-icon="image"></i> Upload Photo</label>
+        </div>
+        <div class="photo-preview hidden" id="photoPreview">
+          <img id="photoImg" alt="ID picture preview" />
+          <button type="button" class="secondary" id="photoRemove"><i data-icon="refresh" data-size="16"></i> Retake / Change</button>
+        </div>
+      </div>
+      <input type="file" id="camInput" accept="image/*" capture="environment" hidden />
+      <input type="file" id="fileInput" accept="image/*" hidden />
+
+      <!-- In-page camera (laptops/desktops) -->
+      <div id="camModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Take ID photo">
+        <div class="box cam-box">
+          <h3 style="margin:0 0 4px">Take ID photo</h3>
+          <p class="muted" style="margin:0 0 10px">Hold the ID inside the frame, keep it steady, then press Capture.</p>
+          <div class="cam-stage">
+            <video id="camVideo" autoplay playsinline muted></video>
+            <div class="cam-frame" aria-hidden="true"></div>
+          </div>
+          <div class="row cam-actions">
+            <button type="button" id="camCapture"><i data-icon="camera"></i> Capture</button>
+            <button type="button" class="secondary" id="camSwitch" hidden><i data-icon="refresh"></i> Switch camera</button>
+            <button type="button" class="secondary" id="camCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="block" type="submit" id="submitBtn">Review details <i data-icon="arrowRight"></i></button>
+    </form>
+
+    <!-- Review before saving -->
+    <div id="review" class="card hidden">
+      <div class="title-row"><span class="title-icon"><i data-icon="eye" data-size="22"></i></span>
+        <div><h2>Please check your details</h2><p class="lead">Your name will appear exactly like this on your exam and evaluation records.</p></div></div>
+      <div class="review-grid" style="margin-top:14px">
+        <dl class="review-list" id="reviewList"></dl>
+        <img id="reviewPhoto" class="review-photo" alt="Your ID picture" />
+      </div>
+      <button class="block" type="button" id="confirmBtn"><i data-icon="check"></i> Confirm &amp; Register</button>
+      <button class="secondary block" type="button" id="editBtn"><i data-icon="arrowLeft"></i> Edit details</button>
+    </div>
+
+    <div id="done" class="card hidden">
+      <div class="success-head"><span class="success-icon"><i data-icon="check" data-size="26"></i></span><h2>You are registered</h2></div>
+      <p id="doneText"></p>
+      <div class="schedule-box" id="schedule"></div>
+      <p class="muted" style="margin-bottom:0">Please proceed to your morning session and wait for the staff's instructions.
+        This device has been used for registration and can't register anyone else.</p>
+    </div>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, showDemoBanner } from "./js/api.js";
+    import { COMPANIES, EMPLOYMENT, ROLES, REGIONS, AREAS } from "./js/config.js";
+    import { esc, scheduleText, fullName } from "./js/people.js";
+    import { forceUpper } from "./js/uppercase.js";
+    import { icon } from "./js/icons.js";
+    // step indicator: 1 = details, 2 = review, 3 = done
+    const setStep = (n) => document.querySelectorAll("#steps li").forEach((li, i) => { li.classList.toggle("done", i < n - 1); li.classList.toggle("current", i === n - 1); });
+
+    const $ = (id) => document.getElementById(id);
+    showDemoBanner($("msg"));
+    const fill = (sel, items) => items.forEach(v => sel.insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`));
+    fill($("company"), COMPANIES); fill($("employment"), EMPLOYMENT); fill($("role"), ROLES); fill($("region"), REGIONS);
+    fill($("area"), Object.keys(AREAS));
+    // Role "Other" → free-text box (what they type is saved as the Role)
+    $("role").insertAdjacentHTML("beforeend", `<option value="__other">Other</option>`);
+    $("role").addEventListener("change", () => {
+      const other = $("role").value === "__other";
+      $("roleOtherBox").classList.toggle("hidden", !other);
+      $("roleOther").required = other;
+      if (other) $("roleOther").focus();
+    });
+    const roleValue = () => $("role").value === "__other" ? clean($("roleOther").value).toUpperCase() : $("role").value;
+    // Choosing an Area fills in its Region (e.g. NCR → Luzon)
+    $("area").addEventListener("change", () => { if (AREAS[$("area").value]) $("region").value = AREAS[$("area").value]; });
+    const DEVICE_KEY = "deviceRegistration";
+    const clean = (s) => s.trim().replace(/\s+/g, " ");
+    // All free text is saved in UPPER CASE: "dela cruz" → "DELA CRUZ"
+    const title = (s) => clean(s).toUpperCase();
+    forceUpper($("surname"), $("firstName"), $("mi"), $("roleOther"));
+
+    // ---------- ID picture ----------
+    // Photos are shrunk on the phone (max 1000px, JPEG) so each one is only ~50–150 KB.
+    let photo = null; // data URL
+    async function compress(file, maxSide = 1000, quality = 0.72) {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        let q = quality, out = c.toDataURL("image/jpeg", q);
+        while (out.length > 700_000 && q > 0.35) { q -= 0.1; out = c.toDataURL("image/jpeg", q); } // stay well under the 1 MB limit
+        return out;
+      } finally { URL.revokeObjectURL(url); }
+    }
+    async function onPick(e) {
+      const file = e.target.files[0]; e.target.value = "";
+      if (!file) return;
+      if (!file.type.startsWith("image/")) { $("msg").innerHTML = `<div class="alert error">Please choose an image file.</div>`; return; }
+      await usePhoto(file);
+    }
+    async function usePhoto(file) {
+      try {
+        photo = await compress(file);
+        $("photoImg").src = photo;
+        $("photoPreview").classList.remove("hidden"); $("photoActions").classList.add("hidden");
+        $("photoBox").classList.remove("missing"); $("msg").innerHTML = "";
+      } catch {
+        $("msg").innerHTML = `<div class="alert error">That picture could not be read. Please try another photo.</div>`;
+      }
+    }
+    $("camInput").addEventListener("change", onPick);
+    $("fileInput").addEventListener("change", onPick);
+
+    // ---------- Take Photo → camera ----------
+    // Phones/tablets: open the phone's own camera app directly (best focus & quality for an ID card).
+    // Laptops/desktops: browsers ignore that, so show a live camera window inside the page instead.
+    const isTouch = matchMedia("(pointer: coarse)").matches;
+    let stream = null, cams = [], camIndex = 0;
+
+    $("camBtn").onclick = () => {
+      if (isTouch || !navigator.mediaDevices?.getUserMedia) return $("camInput").click();
+      openCamera();
+    };
+
+    async function startStream() {
+      stopStream();
+      const cam = cams[camIndex];
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: cam ? { deviceId: { exact: cam.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                   : { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      $("camVideo").srcObject = stream;
+    }
+    function stopStream() { stream?.getTracks().forEach(t => t.stop()); stream = null; }
+
+    async function openCamera() {
+      $("camModal").classList.remove("hidden");
+      try {
+        await startStream();
+        cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+        const active = stream.getVideoTracks()[0]?.getSettings().deviceId;
+        camIndex = Math.max(0, cams.findIndex(c => c.deviceId === active));
+        $("camSwitch").hidden = cams.length < 2;
+        $("camCapture").focus();
+      } catch (err) {
+        closeCamera();
+        const blocked = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+        $("msg").innerHTML = `<div class="alert warn">${blocked
+          ? "Camera access was blocked. Allow the camera in the browser's address bar, or use <b>Upload Photo</b>."
+          : "No camera was found on this device. Please use <b>Upload Photo</b>."}</div>`;
+        window.scrollTo(0, 0);
+      }
+    }
+    function closeCamera() { stopStream(); $("camModal").classList.add("hidden"); }
+
+    $("camCancel").onclick = closeCamera;
+    $("camSwitch").onclick = async () => { camIndex = (camIndex + 1) % cams.length; try { await startStream(); } catch { /* keep current */ } };
+    $("camModal").addEventListener("keydown", (e) => { if (e.key === "Escape") closeCamera(); });
+    $("camCapture").onclick = () => {
+      const v = $("camVideo");
+      if (!v.videoWidth) return;
+      const c = document.createElement("canvas");
+      c.width = v.videoWidth; c.height = v.videoHeight;
+      c.getContext("2d").drawImage(v, 0, 0);
+      c.toBlob(async (blob) => { closeCamera(); if (blob) await usePhoto(blob); }, "image/jpeg", 0.92);
+    };
+    $("photoRemove").onclick = () => {
+      photo = null; $("photoImg").removeAttribute("src");
+      $("photoPreview").classList.add("hidden"); $("photoActions").classList.remove("hidden");
+    };
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!photo) {
+        $("photoBox").classList.add("missing");
+        $("msg").innerHTML = `<div class="alert error">Please add your ID picture.</div>`;
+        $("photoBox").scrollIntoView({ block: "center" });
+        return;
+      }
+      pending = {
+        company: $("company").value, employment: $("employment").value,
+        surname: title($("surname").value), firstName: title($("firstName").value),
+        mi: clean($("mi").value).replace(/\./g, "").toUpperCase(), role: roleValue(), area: $("area").value, region: $("region").value,
+      };
+      // Step 2: review screen
+      const rows = [
+        ["Name", fullName(pending)], ["Company", pending.company], ["Employment", pending.employment],
+        ["Role", pending.role], ["Area", pending.area], ["Region", pending.region],
+      ];
+      $("reviewList").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+      $("reviewPhoto").src = photo;
+      $("msg").innerHTML = "";
+      $("form").classList.add("hidden"); $("review").classList.remove("hidden"); setStep(2);
+      window.scrollTo(0, 0);
+    });
+
+    let pending = null;
+    $("editBtn").onclick = () => { $("review").classList.add("hidden"); $("form").classList.remove("hidden"); setStep(1); window.scrollTo(0, 0); };
+
+    $("confirmBtn").onclick = async () => {
+      if (!pending) return;
+      $("confirmBtn").disabled = true; $("editBtn").disabled = true;
+      $("confirmBtn").textContent = "Saving… please wait";
+      try {
+        // Saved to the Google Sheet (Registration tab); the ID picture goes to the Drive folder.
+        const res = await api("register", { ...pending, photo });
+        $("review").classList.add("hidden");
+        showDone(res, pending);
+      } catch (err) {
+        console.error(err);
+        $("msg").innerHTML = `<div class="alert error">Could not register: ${esc(errorText(err))}</div>`;
+        window.scrollTo(0, 0);
+      } finally {
+        $("confirmBtn").disabled = false; $("editBtn").disabled = false;
+        $("confirmBtn").innerHTML = `${icon("check")} Confirm &amp; Register`;
+      }
+    };
+
+    function showDone(res, p) {
+      setStep(4); // all steps complete
+      // 1 device = 1 registration: remember it, so this device always shows the confirmation from now on.
+      if (p) {
+        localStorage.setItem("registrant", JSON.stringify({ id: res.id, company: p.company, surname: p.surname, firstName: p.firstName, mi: p.mi }));
+        localStorage.setItem(DEVICE_KEY, JSON.stringify({ fullName: res.fullName, group: res.group, already: !!res.already }));
+      }
+      const name = res.fullName.replace(/\.$/, ""); // avoid "R.." at the end of a sentence
+      $("form").classList.add("hidden"); $("review").classList.add("hidden");
+      $("done").classList.remove("hidden");
+      $("doneText").textContent = res.already
+        ? `${name} is already registered. No need to register again.`
+        : `Thank you, ${name}. Your attendance has been recorded.`;
+      const am = res.group === "T" ? "Theoretical Exam" : "Practical Evaluation";
+      const pm = res.group === "T" ? "Practical Evaluation" : "Theoretical Exam";
+      $("schedule").innerHTML = `<div class="sched-row"><span>${icon("sun", 16)} Morning</span><b>${am}</b></div>
+        <div class="sched-row"><span>${icon("sunset", 16)} Afternoon</span><b>${pm}</b></div>`;
+      $("msg").innerHTML = "";
+      window.scrollTo(0, 0);
+    }
+
+    // This device already registered someone → show their confirmation instead of the form.
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); } catch { return null; } })();
+    if (saved?.fullName) showDone(saved);
+
+    // Staff only: register.html?reset clears this device (asks for the evaluator PIN, checked by the server).
+    if (new URLSearchParams(location.search).has("reset")) {
+      const pinTyped = prompt("Staff only — enter the evaluator PIN to clear this device for a new registration:");
+      if (pinTyped) {
+        api("checkPin", { pin: pinTyped }).then(() => {
+          [DEVICE_KEY, "registrant"].forEach(k => localStorage.removeItem(k));
+          location.replace(location.pathname);
+        }).catch(e => { $("msg").innerHTML = `<div class="alert error">${esc(errorText(e))}</div>`; });
+      }
+    }
+  </script>
+</body>
+</html>

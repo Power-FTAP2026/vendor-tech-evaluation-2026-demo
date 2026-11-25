@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Theoretical Exam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top" data-page="exam" data-sub="Theoretical Evaluation"></header>
+  <div id="bar" class="examBar hidden">
+    <div class="examBar-row">
+      <span id="progress">0 / 60 answered</span>
+      <span id="parts" class="muted"></span>
+      <span id="timer" class="timer"></span>
+    </div>
+    <div class="progress" role="progressbar" aria-label="Answered" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+  <main>
+    <div id="msg"></div>
+
+    <ol class="steps" id="steps" aria-label="Exam steps">
+      <li class="current"><span>Sign in</span></li><li><span>Answer</span></li><li><span>Submitted</span></li>
+    </ol>
+
+    <!-- Start screen -->
+    <form id="startForm" class="card hidden">
+      <div class="title-row"><span class="title-icon"><i data-icon="pen" data-size="22"></i></span>
+        <div><h2>Theoretical Evaluation</h2><p class="lead">Sign in with the name you registered with.</p></div></div>
+      <div class="chips" id="instructions"></div>
+
+      <h3 class="sec"><i data-icon="user" data-size="16"></i> Who is taking the exam?</h3>
+      <label for="company">Company <span class="req">*</span></label>
+      <select id="company" required><option value="">— select —</option></select>
+      <div class="grid3">
+        <div><label for="surname">Surname <span class="req">*</span></label><input id="surname" required autocomplete="family-name" /></div>
+        <div><label for="firstName">First Name <span class="req">*</span></label><input id="firstName" required autocomplete="given-name" /></div>
+        <div><label for="mi">M.I.</label><input id="mi" maxlength="3" /></div>
+      </div>
+      <div id="regCheck" class="reg-check"></div>
+      <p class="muted" style="margin:10px 0 0">Only registered participants can take the exam. Type your name exactly as you registered.
+        Not registered yet? <a href="register.html">Register first</a>.</p>
+      <div id="schedWarn"></div>
+
+      <div class="disclaimer">
+        <h3><i data-icon="shield" data-size="16"></i> <span id="discTitle"></span></h3>
+        <p id="discText"></p>
+        <label class="agree"><input type="checkbox" id="agree" required /> I have read and agree to the Privacy Disclaimer.</label>
+      </div>
+      <button class="block" type="submit" id="startBtn">Start Exam <i data-icon="arrowRight"></i></button>
+    </form>
+
+    <!-- Exam -->
+    <form id="examForm" class="hidden">
+      <div class="card"><p id="who"></p><h3 class="part-title">Part 1 · Technical &amp; Process</h3><div id="part1"></div></div>
+      <div class="card"><h3 class="part-title">Part 2 · Legal &amp; Compliance</h3><div id="part2"></div></div>
+      <button class="block" type="submit" id="submitBtn"><i data-icon="send"></i> Submit Exam</button>
+      <p class="muted" style="text-align:center;margin-top:10px">Your answers are saved on this device while you work.</p>
+    </form>
+
+    <!-- Done -->
+    <div id="done" class="card hidden">
+      <div class="success-head"><span class="success-icon"><i data-icon="check" data-size="26"></i></span><h2>Exam submitted</h2></div>
+      <p id="doneText">Thank you. Your answers have been recorded.</p>
+      <div id="scoreBox" class="score-box hidden">
+        <span class="score-label">Your score</span>
+        <span class="score-value" id="scoreValue"></span>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, showDemoBanner } from "./js/api.js";
+    import { EXAM, COMPANIES, PRIVACY_DISCLAIMER, DEMO_SITE } from "./js/config.js";
+    import { currentSession, esc } from "./js/people.js";
+    import { forceUpper } from "./js/uppercase.js";
+    import { icon } from "./js/icons.js";
+    import { protectPage } from "./js/protect.js";
+    // step indicator: 1 = sign in, 2 = answer, 3 = submitted (4 = all complete)
+    const setStep = (n) => document.querySelectorAll("#steps li").forEach((li, i) => { li.classList.toggle("done", i < n - 1); li.classList.toggle("current", i === n - 1); });
+
+    const $ = (id) => document.getElementById(id);
+    forceUpper($("surname"), $("firstName"), $("mi"));
+    const STATE_KEY = "examState2", DONE_KEY = "examSubmitted";
+    const SET_NAMES = ["A", "B", "C", "D"];
+    const LETTERS = ["A", "B", "C", "D"];
+    let state = null, timerHandle = null, submitting = false;
+    const total = () => state.part1.length + state.part2.length;
+    const save = () => localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+
+    function initStart() {
+      $("startForm").classList.remove("hidden");
+      if (DEMO_SITE) { // demo website: the exam can be viewed but not started
+        $("startBtn").disabled = true;
+        $("startBtn").innerHTML = `${icon("lock")} Start Exam: not available in the demo`;
+        $("startBtn").insertAdjacentHTML("beforebegin", `<div class="alert info" style="margin:16px 0 0">
+          <b>Demo:</b> this is how the exam sign-in looks. Starting the exam is turned off on the demo website. The real exam
+          opens on the evaluation day.</div>`);
+      }
+      setStep(1);
+      $("instructions").innerHTML = [
+        [icon("sheet", 16), "<b>60</b> questions", "50 Technical & Process + 10 Legal & Compliance"],
+        EXAM.timeLimitMinutes ? [icon("clock", 16), `<b>${EXAM.timeLimitMinutes}</b> minutes`, "Auto-submits when time is up"] : null,
+        [icon("send", 16), "<b>1</b> submission", "You can only submit once"],
+      ].filter(Boolean).map(([ic, big, small]) => `<div class="chip">${ic}<span>${big}<small>${small}</small></span></div>`).join("");
+      COMPANIES.forEach(c => $("company").insertAdjacentHTML("beforeend", `<option>${esc(c)}</option>`));
+      $("discTitle").textContent = PRIVACY_DISCLAIMER.title;
+      $("discText").textContent = PRIVACY_DISCLAIMER.text;
+      const reg = JSON.parse(localStorage.getItem("registrant") || "null");
+      if (reg?.surname) {
+        // Registered on this same device: pre-fill their details and mark them "Live".
+        $("company").value = reg.company; $("surname").value = reg.surname;
+        $("firstName").value = reg.firstName; $("mi").value = reg.mi || "";
+        lookup().then(p => { if (p) api("examStart", { id: p.id }).catch(() => {}); });
+      }
+    }
+
+    // ---------- registration lookup (done by the server; nobody can see the full list) ----------
+    let found = null, lookupSeq = 0;
+    async function lookup() {
+      const typed = $("surname").value.trim() && $("firstName").value.trim() && $("company").value;
+      found = null; checkSchedule();
+      if (!typed) { $("regCheck").innerHTML = ""; return null; }
+      const seq = ++lookupSeq;
+      $("regCheck").innerHTML = `<div class="alert info">Checking registration…</div>`;
+      try {
+        const { person } = await api("findPerson", {
+          company: $("company").value, surname: $("surname").value, firstName: $("firstName").value, mi: $("mi").value,
+        });
+        if (seq !== lookupSeq) return null;
+        found = person;
+        $("regCheck").innerHTML = `<div class="alert ok">Registration found: <b>${esc(person.fullName)}</b> · ${esc(person.company)}</div>`;
+      } catch (e) {
+        if (seq !== lookupSeq) return null;
+        $("regCheck").innerHTML = `<div class="alert error">${esc(errorText(e))}</div>`;
+      }
+      checkSchedule();
+      return found;
+    }
+    ["company", "surname", "firstName", "mi"].forEach(id => $(id).addEventListener("change", lookup));
+
+    let scheduleOk = true;
+    function checkSchedule() {
+      // Practical-first people ("P") can't take the Theoretical exam in the morning — no override.
+      scheduleOk = !(found && currentSession() === "AM" && found.group === "P");
+      $("schedWarn").innerHTML = scheduleOk ? "" : `<div class="alert error">
+        You are scheduled for the <b>Practical Evaluation this morning</b>. Your Theoretical Exam is in the
+        <b>afternoon session</b> — please proceed to the Practical area.</div>`;
+      $("startBtn").disabled = DEMO_SITE || !scheduleOk;
+    }
+
+    $("startForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (DEMO_SITE) return; // the exam can't be started on the demo website
+      $("startBtn").disabled = true; $("startBtn").textContent = "Please wait…";
+      try {
+        const person = found || await lookup();
+        if (!person) { $("regCheck").scrollIntoView({ block: "center" }); return; }
+        if (!scheduleOk) { $("schedWarn").scrollIntoView({ block: "center" }); return; }
+        const { status } = await api("examStart", { id: person.id });
+        if (status === "done") {
+          $("regCheck").innerHTML = `<div class="alert error">${esc(person.fullName)} has already submitted the exam. Please see the proctor.</div>`;
+          return;
+        }
+        // Each device gets ONE random set (A–D); the server sends the questions WITHOUT answers.
+        const set = SET_NAMES[Math.floor(Math.random() * SET_NAMES.length)];
+        const exam = await api("examQuestions", { id: person.id, set });
+        state = {
+          person: { id: person.id, fullName: person.fullName, company: person.company },
+          set: exam.set,
+          part1: EXAM.shuffleQuestionOrder ? shuffle(exam.part1) : exam.part1,
+          part2: exam.part2,
+          startedAt: Date.now(), answers: {}, ongoingSent: false,
+        };
+        save();
+        $("startForm").classList.add("hidden"); $("msg").innerHTML = "";
+        startExam();
+      } catch (err) {
+        $("msg").innerHTML = `<div class="alert error">${esc(errorText(err))}</div>`;
+        window.scrollTo(0, 0);
+      } finally {
+        $("startBtn").disabled = DEMO_SITE || !scheduleOk; $("startBtn").innerHTML = `Start Exam ${icon("arrowRight")}`;
+      }
+    });
+
+    // ---------- render ----------
+    const cleanChoice = (c) => String(c).replace(/^[A-D][.)]\s+/, ""); // some choices already start with "A. "
+    function qHtml(displayNo, item) {
+      const name = "q" + item.no, picked = state.answers[item.no];
+      return `<div class="q"><div class="cat">${esc(item.category || "")}</div>
+        <div class="text"><span class="num">${displayNo}</span><span>${esc(item.q)}</span></div>
+        ${item.choices.map((c, i) => `
+          <label class="choice"><input type="radio" name="${name}" value="${LETTERS[i]}" data-no="${item.no}" ${picked === LETTERS[i] ? "checked" : ""}/>
+          <span><b>${LETTERS[i]}</b><span>${esc(cleanChoice(c))}</span></span></label>`).join("")}</div>`;
+    }
+
+    function startExam() {
+      // questions on screen → leak deterrents on (hide when the page loses focus, no copy/print, Print Screen warning)
+      $("examForm").classList.add("protected"); protectPage();
+      $("who").innerHTML = `${icon("user", 16)} ${esc(state.person.fullName)} · ${esc(state.person.company)}`;
+      setStep(2);
+      $("part1").innerHTML = state.part1.map((q, i) => qHtml(i + 1, q)).join("");
+      $("part2").innerHTML = state.part2.map((q, i) => qHtml(state.part1.length + i + 1, q)).join("");
+      $("examForm").classList.remove("hidden");
+      $("bar").classList.remove("hidden");
+      updateProgress();
+      if (EXAM.timeLimitMinutes) { tick(); timerHandle = setInterval(tick, 1000); }
+    }
+
+    $("examForm").addEventListener("change", (e) => {
+      if (e.target.type !== "radio") return;
+      state.answers[e.target.dataset.no] = e.target.value;
+      if (!state.ongoingSent) { // first answer → "Ongoing" on the dashboard
+        state.ongoingSent = true;
+        api("examProgress", { id: state.person.id, status: "ongoing", set: state.set }).catch(() => { state.ongoingSent = false; });
+      }
+      save(); updateProgress();
+    });
+
+    function updateProgress() {
+      const done = Object.keys(state.answers).length;
+      const inPart = (list) => list.filter(q => state.answers[q.no]).length;
+      const pct = total() ? Math.round(done / total() * 100) : 0;
+      $("progress").textContent = `${done} / ${total()} answered`;
+      $("parts").textContent = `Part 1: ${inPart(state.part1)}/${state.part1.length} · Part 2: ${inPart(state.part2)}/${state.part2.length}`;
+      $("progressFill").style.width = pct + "%";
+      $("progressFill").parentElement.setAttribute("aria-valuenow", pct);
+    }
+
+    // Warn if the examinee tries to close / refresh / go back in the middle of the exam.
+    window.addEventListener("beforeunload", (e) => {
+      if (state?.part1?.length && !submitting && !localStorage.getItem(DONE_KEY)) { e.preventDefault(); e.returnValue = ""; }
+    });
+
+    function tick() {
+      const left = state.startedAt + EXAM.timeLimitMinutes * 60000 - Date.now();
+      if (left <= 0) {
+        $("timer").innerHTML = `${icon("clock", 16)} Time is up`;
+        clearInterval(timerHandle);
+        submit(true);
+        return;
+      }
+      const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+      $("timer").innerHTML = `${icon("clock", 16)} ${m}:${String(s).padStart(2, "0")}`;
+      $("timer").classList.toggle("low", left < 5 * 60000);
+    }
+
+    // ---------- submit ----------
+    $("examForm").addEventListener("submit", (e) => { e.preventDefault(); submit(false); });
+
+    async function submit(auto) {
+      if (submitting) return;
+      const unanswered = total() - Object.keys(state.answers).length;
+      if (!auto) {
+        const warn = unanswered ? `You still have ${unanswered} unanswered question(s).\n\n` : "";
+        if (!confirm(warn + "Submit your exam now? You cannot change your answers after this.")) return;
+      }
+      submitting = true;
+      $("submitBtn").disabled = true; $("submitBtn").textContent = "Submitting… please wait";
+      try {
+        // Graded on the server against the answer key in the Google Sheet; only the score comes back (e.g. 45/60).
+        const res = await api("examSubmit", {
+          id: state.person.id, set: state.set, answers: state.answers,
+          startedAt: new Date(state.startedAt).toISOString(), auto: !!auto,
+        }, { retries: 8 });
+        finish(res);
+      } catch (err) {
+        console.error(err);
+        // Our first try was saved but its reply got lost, so the automatic retry found it "already done" → that's a success.
+        if (err.code === "already_done" && err.afterRetry) { finish(null); return; }
+        submitting = false;
+        $("submitBtn").disabled = false; $("submitBtn").innerHTML = `${icon("send")} Submit Exam`;
+        let msg = "Could not submit — " + esc(errorText(err)) + " Press Submit again. Your answers are still saved on this device.";
+        if (err.code === "already_done") msg = `An exam has already been submitted for "${esc(state.person.fullName)}". Please see the proctor.`;
+        if (err.code === "not_registered") msg = `"${esc(state.person.fullName)}" is not registered, so this exam cannot be accepted. Please see the proctor.`;
+        $("msg").innerHTML = `<div class="alert error">${msg}</div>`;
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function finish(res) {
+      clearInterval(timerHandle);
+      const info = { name: state.person.fullName, score: res?.score, total: res?.total };
+      localStorage.setItem(DONE_KEY, JSON.stringify(info)); // keeps showing the score if the page is reopened
+      localStorage.removeItem(STATE_KEY);
+      $("examForm").classList.add("hidden"); $("bar").classList.add("hidden");
+      $("msg").innerHTML = "";
+      showDone(info);
+      window.scrollTo(0, 0);
+    }
+
+    function showDone(saved) {
+      setStep(4);
+      let info;
+      try { info = JSON.parse(saved); } catch { info = null; }
+      if (typeof saved === "object" && saved) info = saved;
+      if (!info || typeof info !== "object") info = { name: String(saved || "") }; // older format: just the name
+      const name = String(info.name || "").replace(/\.$/, ""); // avoid "R.." at the end of a sentence
+      $("done").classList.remove("hidden");
+      $("doneText").textContent = `Thank you, ${name}. Your answers have been recorded.`;
+      $("scoreBox").classList.toggle("hidden", typeof info.score !== "number");
+      if (typeof info.score === "number") $("scoreValue").textContent = `${info.score} / ${info.total || 60}`;
+    }
+
+    // ---------- boot (kept last: everything above must be defined before it runs) ----------
+    // Proctor tool for shared devices: open exam.html?reset to clear this device for the next examinee.
+    if (new URLSearchParams(location.search).has("reset")) {
+      if (confirm("Clear this device so the next person can take the exam?")) {
+        [STATE_KEY, "examState", DONE_KEY, "registrant"].forEach(k => localStorage.removeItem(k));
+      }
+      location.replace(location.pathname);
+    }
+    showDemoBanner($("msg"));
+    const finished = localStorage.getItem(DONE_KEY);
+    try { state = JSON.parse(localStorage.getItem(STATE_KEY) || "null"); } catch { state = null; }
+    if (finished) showDone(finished);
+    else if (state?.part1?.length) startExam();
+    else initStart();
+  </script>
+</body>
+</html>

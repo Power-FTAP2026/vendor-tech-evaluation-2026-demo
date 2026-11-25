@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <header class="top" data-page="admin" data-sub="Admin"></header>
+  <main class="wide">
+    <div id="msg"></div>
+
+    <section class="card no-print">
+      <div class="title-row"><span class="title-icon"><i data-icon="sheet" data-size="22"></i></span>
+        <div><h2>Results &amp; data</h2><p class="lead">All records are stored in Google. Open them with the Google account that owns the files —
+          nobody else can see them unless you share them.</p></div></div>
+      <div class="tiles" style="margin-top:16px">
+        <a class="tile" id="lSheet" target="_blank" rel="noopener"><span class="tile-ic"><i data-icon="sheet" data-size="20"></i></span>
+          <span><h3>Google Sheet</h3><span class="muted">Summary, Registration (with Unique IDs), Theoretical &amp; Practical status, scores</span></span></a>
+        <a class="tile" id="lDrive" target="_blank" rel="noopener"><span class="tile-ic"><i data-icon="folder" data-size="20"></i></span>
+          <span><h3>ID Pictures folder</h3><span class="muted">Google Drive — one photo per registration, named by Unique ID</span></span></a>
+        <a class="tile" id="lScript" target="_blank" rel="noopener"><span class="tile-ic"><i data-icon="code" data-size="20"></i></span>
+          <span><h3>Apps Script</h3><span class="muted">The backend code, deployments and Script properties (evaluator PIN)</span></span></a>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button id="testBtn" class="secondary"><i data-icon="refresh" data-size="16"></i> Test connection</button>
+        <span id="testResult" class="test-result muted"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head no-print"><div class="title-row" style="margin:0"><span class="title-icon"><i data-icon="qr" data-size="22"></i></span>
+        <div><h2>QR Codes</h2><p class="lead">Print and post these at the venue.</p></div></div>
+        <button onclick="print()"><i data-icon="printer" data-size="16"></i> Print QR codes</button></div>
+      <div class="qr-grid" id="qrGrid"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, isConfigured, showDemoBanner } from "./js/api.js";
+    import { LINKS, DEMO_SITE } from "./js/config.js";
+    import { esc } from "./js/people.js";
+    import { icon } from "./js/icons.js";
+
+    const $ = (id) => document.getElementById(id);
+    showDemoBanner($("msg"));
+    $("lSheet").href = LINKS.sheet; $("lDrive").href = LINKS.drive; $("lScript").href = LINKS.script;
+    if (DEMO_SITE) { // the demo website has no Google data — hide the private links
+      $("lSheet").closest(".card").querySelector(".tiles").classList.add("hidden");
+      $("lSheet").closest(".card").querySelector(".lead").textContent = "This is the demo website: nothing is saved to Google. Data stays in this browser only.";
+    }
+
+    $("testBtn").onclick = async () => {
+      $("testResult").textContent = "Testing…";
+      try {
+        const [ping, board] = await Promise.all([api("ping"), api("board")]); // (the scenario list itself needs the evaluator PIN)
+        $("testResult").innerHTML = isConfigured
+          ? `<span style="color:var(--ok)">${icon("checkCircle", 16)}</span> Connected to the Google Sheet · ${board.rows.length} registered · ${board.stationsTotal} practical stations`
+          : `Demo mode (not connected yet) · ${board.rows.length} registered in this browser`;
+      } catch (e) {
+        $("testResult").innerHTML = `<span style="color:var(--err)">${icon("xCircle", 16)} ${esc(errorText(e))}</span>`;
+      }
+    };
+
+    // ---------- QR codes ----------
+    const base = location.href.replace(/[^/]*([?#].*)?$/, "");
+    [["Registration", "register.html"], ["Theoretical Exam", "exam.html"], ["Practical Evaluation (evaluators)", "practical.html"]]
+      .forEach(([label, page], i) => {
+        const url = base + page;
+        $("qrGrid").insertAdjacentHTML("beforeend",
+          `<div class="qr-card card"><h3>${label}</h3><div class="qr" id="qr${i}"></div><p class="url"><a href="${url}" target="_blank">${url}</a></p></div>`);
+        new QRCode($("qr" + i), { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      });
+  </script>
+</body>
+</html>

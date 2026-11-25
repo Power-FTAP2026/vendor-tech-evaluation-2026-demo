@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Practical Evaluation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top" data-page="practical" data-sub="Practical Evaluation"></header>
+  <main>
+    <div id="msg"></div>
+    <div class="evaluator-bar hidden" id="whoBar">
+      <span class="session-badge"><i data-icon="user" data-size="16"></i><span id="evName"></span></span>
+      <button id="logout" class="secondary small"><i data-icon="logOut" data-size="16"></i> Log out</button>
+    </div>
+
+    <!-- Login -->
+    <form id="login" class="card hidden">
+      <div class="title-row"><span class="title-icon"><i data-icon="wrench" data-size="22"></i></span>
+        <div><h2>Evaluator Login</h2><p class="lead">Choose your event and name, then enter the evaluator PIN.</p></div></div>
+      <label for="event"><i data-icon="calendar" data-size="15"></i> Event</label>
+      <select id="event" required></select>
+      <label for="evaluator"><i data-icon="user" data-size="15"></i> Your Name</label>
+      <select id="evaluator" required></select>
+      <!-- hidden username so browsers/password managers handle the PIN field properly -->
+      <input type="text" name="username" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
+      <label for="pin"><i data-icon="lock" data-size="15"></i> Evaluator PIN</label>
+      <div class="pin-wrap">
+        <input id="pin" type="password" required autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button type="button" class="pin-toggle" id="pinToggle" aria-label="Show PIN" aria-pressed="false"><i data-icon="eye" data-size="16"></i> Show</button>
+      </div>
+      <p class="muted" style="margin:6px 0 0" id="pinHint">The PIN is case-sensitive.</p>
+      <button class="block" type="submit" id="loginBtn">Continue <i data-icon="arrowRight"></i></button>
+    </form>
+
+    <!-- Stations -->
+    <section id="cats" class="hidden">
+      <div class="card">
+        <div class="card-head"><h2>Your station</h2></div>
+        <div class="cat-grid" id="catGrid"><p class="muted">Loading stations…</p></div>
+      </div>
+      <div class="card"><div class="card-head"><h2>Your recent submissions</h2><span class="muted">this device</span></div><div id="recent" class="muted">None yet.</div></div>
+    </section>
+
+    <!-- Scoring -->
+    <form id="scoreForm" class="card hidden" novalidate>
+      <div class="card-head">
+        <h2 id="catTitle"></h2>
+        <button type="button" class="secondary small" id="back" hidden><i data-icon="arrowLeft" data-size="16"></i> Stations</button>
+      </div>
+
+      <label for="techSearch">Technician being evaluated <span class="req">*</span></label>
+      <div id="pickerBox">
+        <div class="search-field"><i data-icon="search"></i>
+          <input id="techSearch" type="search" placeholder="Type part of the surname or first name…" autocomplete="off" /></div>
+        <div id="techResults" class="tech-results"></div>
+      </div>
+      <div id="picked" class="picked hidden">
+        <div class="row" style="flex-wrap:nowrap"><span class="avatar"><i data-icon="user" data-size="20"></i></span>
+          <div><b id="pickedName"></b><div class="muted" id="pickedMeta"></div></div></div>
+        <button type="button" class="secondary small" id="changeTech">Change</button>
+      </div>
+      <div id="checklist" class="checklist hidden"></div>
+      <div id="stTimer" class="st-timer hidden" role="timer" aria-live="off">
+        <div id="stSegs" class="st-segs"></div>
+        <div class="st-actions">
+          <button type="button" class="small" id="stNext" hidden></button>
+          <button type="button" class="secondary small" id="stRestart" title="Start the current 10 minutes again"><i data-icon="refresh" data-size="15"></i> Restart</button>
+        </div>
+      </div>
+      <div id="personNote"></div>
+
+      <div id="scenarios"></div>
+      <div class="total" id="total"></div>
+      <label for="remarks">Remarks</label>
+      <textarea id="remarks" rows="3"></textarea>
+      <button class="block" type="submit" id="saveBtn">Review &amp; Submit <i data-icon="arrowRight"></i></button>
+    </form>
+
+    <!-- Confirm submission -->
+    <section id="confirmPage" class="card hidden">
+      <div class="title-row"><span class="title-icon"><i data-icon="eye" data-size="22"></i></span>
+        <div><h2>Confirm submission</h2><p class="lead">Check every score before submitting.</p></div></div>
+      <div class="alert warn" style="margin-top:14px">Once submitted, these scores are <b>final and can't be changed.</b></div>
+      <dl class="review-list" id="confirmWho"></dl>
+      <div class="table-wrap" style="margin-top:14px">
+        <table class="confirm-table"><thead><tr><th>Scenario</th><th class="num">Score</th></tr></thead><tbody id="confirmRows"></tbody></table>
+      </div>
+      <div class="total" id="confirmTotal"></div>
+      <div id="confirmRemarks"></div>
+      <button class="block" type="button" id="submitFinal"><i data-icon="check"></i> Submit final scores</button>
+      <button class="secondary block" type="button" id="backToEdit"><i data-icon="arrowLeft"></i> Back to edit</button>
+    </section>
+
+    <!-- Submitted -->
+    <section id="donePage" class="card hidden">
+      <div class="success-head"><span class="success-icon"><i data-icon="check" data-size="26"></i></span><h2>Scores submitted</h2></div>
+      <p id="doneText"></p>
+      <p class="muted"><i data-icon="lock" data-size="15"></i> These scores are now saved and locked.</p>
+      <button class="block" type="button" id="nextTech">Score the next technician <i data-icon="arrowRight"></i></button>
+      <button class="secondary block" type="button" id="toStations" hidden><i data-icon="grid"></i> Stations</button>
+    </section>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, showDemoBanner, isConfigured } from "./js/api.js";
+    import { EVENTS, todaysEvent, PRACTICAL } from "./js/config.js";
+    import { fullName, esc } from "./js/people.js";
+    import { forceUpper } from "./js/uppercase.js";
+    import { icon } from "./js/icons.js";
+    import { protectPage, watermark } from "./js/protect.js";
+
+    const $ = (id) => document.getElementById(id);
+    forceUpper($("techSearch"), $("remarks"));
+    showDemoBanner($("msg"));
+    const flash = (cls, html) => { $("msg").innerHTML = `<div class="alert ${cls}">${html}</div>`; window.scrollTo(0, 0); };
+    const QUICK_MAX = 10; // scenarios with a max of 10 or less get tap buttons; bigger ones get a number box
+    let evaluator = sessionStorage.getItem("evaluator");
+    let pin = sessionStorage.getItem("evaluatorPin");
+    let stations = [], people = [], current = null, selected = null, liveSentFor = null;
+
+    let myStation = sessionStorage.getItem("evaluatorStation") || "";
+
+    // Event → its evaluators ("Name — Station"); today's event is pre-selected.
+    $("event").innerHTML = EVENTS.map(ev => `<option value="${ev.id}">${esc(ev.name)} (${esc(fmtDays(ev.days))})</option>`).join("");
+    $("event").value = todaysEvent().id;
+    function fillEvaluators() {
+      const ev = EVENTS.find(e => e.id === $("event").value);
+      $("evaluator").innerHTML = `<option value="">— select your name —</option>` +
+        (ev?.evaluators || []).map((x, i) => `<option value="${i}">${esc(x.name)} — ${esc(x.station)}</option>`).join("");
+    }
+    function fmtDays(days) {
+      const f = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+      return days.map(f).join(" & ");
+    }
+    $("event").addEventListener("change", fillEvaluators);
+    if (!isConfigured) $("pinHint").innerHTML = "The PIN is case-sensitive. <b>Demo mode practice PIN: 2468</b>";
+
+    // Show / hide what is typed in the PIN box
+    function setPinVisible(show) {
+      $("pin").type = show ? "text" : "password";
+      $("pinToggle").innerHTML = show ? `${icon("eyeOff", 16)} Hide` : `${icon("eye", 16)} Show`;
+      $("pinToggle").setAttribute("aria-label", show ? "Hide PIN" : "Show PIN");
+      $("pinToggle").setAttribute("aria-pressed", String(show));
+    }
+    $("pinToggle").onclick = () => { setPinVisible($("pin").type === "password"); $("pin").focus(); };
+    fillEvaluators();
+
+    function show(id) {
+      ["login", "cats", "scoreForm", "confirmPage", "donePage"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+      $("whoBar").classList.toggle("hidden", id === "login");
+      window.scrollTo(0, 0);
+    }
+
+    // ---------- data from the Google Sheet ----------
+    async function loadConfig() {
+      try { stations = (await api("practicalConfig", { pin })).stations; } // the scenario list needs the evaluator PIN
+      catch (e) { flash("error", "Could not load the stations: " + esc(errorText(e))); }
+    }
+    async function loadPeople() {
+      try {
+        people = (await api("board", {}, { retries: 2 })).rows;
+        if (selected) { selected = people.find(p => p.id === selected.id) || selected; renderPicked(); }
+        renderResults();
+        if (!current) renderCats();
+      } catch (e) { /* keep the last list; next refresh will retry */ }
+    }
+    setInterval(() => { if (evaluator && !document.hidden) loadPeople(); }, 20000);
+
+    async function route() {
+      if (!evaluator || !pin) return show("login");
+      // logged in → scenarios may be on screen: leak deterrents on
+      ["scoreForm", "confirmPage"].forEach(id => $(id).classList.add("protected")); protectPage();
+      const evName = sessionStorage.getItem("evaluatorEvent");
+      $("evName").textContent = `${evaluator}` + (myStation ? ` · ${myStation}` : "") + (evName ? ` · ${evName}` : "");
+      if (!stations.length) { await loadConfig(); await loadPeople(); }
+      // Evaluators only ever see THEIR OWN station (chosen by event + name at login) — other stations stay hidden.
+      if (location.hash) history.replaceState(null, "", location.pathname + location.search); // ignore typed #station=…
+      const mine = stations.find(s => s.name === myStation);
+      if (mine) { if (current !== mine || $("scoreForm").classList.contains("hidden") && $("confirmPage").classList.contains("hidden") && $("donePage").classList.contains("hidden")) openStation(mine); }
+      else { current = null; renderCats(); show("cats"); }
+    }
+
+    $("login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const ev = EVENTS.find(e => e.id === $("event").value);
+      const who = ev?.evaluators[Number($("evaluator").value)];
+      if (!who || $("evaluator").value === "") return;
+      $("loginBtn").disabled = true;
+      try {
+        await api("checkPin", { pin: $("pin").value });   // checked by the server
+        evaluator = who.name; pin = $("pin").value; myStation = who.station;
+        sessionStorage.setItem("evaluator", evaluator); sessionStorage.setItem("evaluatorPin", pin);
+        sessionStorage.setItem("evaluatorStation", myStation); sessionStorage.setItem("evaluatorEvent", ev.name);
+        $("msg").innerHTML = ""; $("pin").value = ""; setPinVisible(false);
+        showDemoBanner($("msg"));
+        if (!stations.length) { await loadConfig(); await loadPeople(); }
+        // go straight to their own station (if it exists in the Practical Setup)
+        route();
+      } catch (err) {
+        flash("error", esc(errorText(err)) + (err.code === "bad_pin" && !isConfigured
+          ? " <b>You are in demo mode</b> — use the practice PIN <b>2468</b>, or <a href=\"?demo=0\">switch to LIVE</a> to use the real PIN." : ""));
+      } finally { $("loginBtn").disabled = false; }
+    });
+    $("logout").onclick = () => {
+      ["evaluator", "evaluatorPin", "evaluatorStation", "evaluatorEvent"].forEach(k => sessionStorage.removeItem(k));
+      myStation = "";
+      evaluator = pin = null; location.hash = ""; route();
+    };
+
+    const doneAt = (stName) => people.filter(p => (p.stations || []).includes(stName)).length;
+
+    function renderCats() {
+      if (!stations.length) return;
+      if (!stations.some(s => s.name === myStation)) {
+        $("catGrid").innerHTML = `<div class="alert error">Your station ${myStation ? "<b>" + esc(myStation) + "</b> " : ""}was not found in the
+          Practical Setup. Please log out and choose your event and name again, or contact the coordinator.</div>`;
+        return;
+      }
+      return; // evaluators never get a list of the other stations
+      $("catGrid").innerHTML = stations.map((s, i) => `
+        <button type="button" class="cat-btn ${s.name === myStation ? "mine" : ""}" data-i="${i}"><span class="st-no">${i + 1}</span><b>${esc(s.name)}${s.name === myStation ? ` <span class="mine-tag">Your station</span>` : ""}</b>
+        <span class="muted">${s.scenarios.length} scenario(s) · max ${s.scenarios.reduce((t, x) => t + x.max, 0)} pts<br>${doneAt(s.name)} evaluated</span></button>`).join("");
+      $("catGrid").querySelectorAll("button").forEach(b => b.onclick = () => location.hash = "station=" + encodeURIComponent(stations[b.dataset.i].name));
+      const recent = JSON.parse(localStorage.getItem("recentScores") || "[]");
+      if (recent.length) $("recent").innerHTML = `<div class="table-wrap"><table><tr><th>Time</th><th>Technician</th><th>Station</th><th>Score</th></tr>` +
+        recent.map(r => `<tr><td>${esc(r.time)}</td><td>${esc(r.tech)}</td><td>${esc(r.cat)}</td><td>${r.total} / ${r.max}</td></tr>`).join("") + "</table></div>";
+    }
+
+    // ---------- technician search ----------
+    const norm = (s) => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]/g, " ");
+    function renderResults() {
+      if (!current || selected) return;
+      const words = norm($("techSearch").value).split(/\s+/).filter(Boolean);
+      if (!words.length) { $("techResults").innerHTML = `<p class="muted">Start typing to find the technician (${people.length} registered).</p>`; return; }
+      const hits = people.filter(p => { const n = norm(fullName(p) + " " + p.company); return words.every(w => n.includes(w)); })
+        .sort((a, b) => fullName(a).localeCompare(fullName(b))).slice(0, 8);
+      $("techResults").innerHTML = hits.length
+        ? hits.map(p => {
+            const done = (p.stations || []).includes(current.name);
+            return `<button type="button" class="tech-hit ${done ? "locked" : ""}" data-id="${esc(p.id)}" ${done ? "disabled" : ""}>
+              <span><b>${esc(fullName(p))}</b><span class="muted"> · ${esc(p.company)} · ${esc(p.role)}</span></span>
+              <span class="${done ? "hit-done" : "muted"}">${done ? `${icon("lock", 14)} Submitted` : `${(p.stations || []).length}/${stations.length} stations`}</span></button>`;
+          }).join("")
+        : `<p class="muted">No registered technician matches “${esc($("techSearch").value)}”.</p>`;
+    }
+    $("techSearch").addEventListener("input", renderResults);
+    $("techResults").addEventListener("click", (e) => {
+      const b = e.target.closest(".tech-hit"); if (!b || b.disabled) return;
+      selected = people.find(p => p.id === b.dataset.id); liveSentFor = null;
+      renderPicked();
+    });
+    $("changeTech").onclick = () => { selected = null; renderPicked(); $("techSearch").focus(); };
+
+    // ---------- 10-minute timers (per technician, per station — and per part, e.g. 4.1 and 4.2) ----------
+    // Each "segment" (the whole station, or each part of it) has its own 10 minutes.
+    // Segment 1 starts when the technician is picked; the next one starts on its first score or the Start button,
+    // which also stops the previous segment. Start/stop times are kept in sessionStorage (survive a refresh).
+    const LIMIT_MS = PRACTICAL.minutesPerStation * 60000, WARN_MS = PRACTICAL.warnAtMinutes * 60000;
+    let timerBase = null, timerTick = null, alerted = {};
+    const segments = () => {
+      const parts = [...new Set(current.scenarios.map(s => s.part || ""))];
+      return parts.length > 1 ? parts : [""];             // "" = the whole station
+    };
+    const segOfScenario = (i) => Math.max(0, segments().indexOf(current.scenarios[i]?.part || ""));
+    const sKey = (k, what) => `${timerBase}:${k}:${what}`;   // what = "start" | "stop"
+    const getT = (k, what) => Number(sessionStorage.getItem(sKey(k, what))) || 0;
+    const setT = (k, what, v) => v ? sessionStorage.setItem(sKey(k, what), String(v)) : sessionStorage.removeItem(sKey(k, what));
+    const activeSeg = () => { const n = segments().length; for (let k = n - 1; k >= 0; k--) if (getT(k, "start")) return k; return -1; };
+
+    function startTimer() {
+      const base = `stTimer:${current?.name}:${selected?.id}`;
+      if (timerBase !== base) { timerBase = base; alerted = {}; }
+      if (activeSeg() < 0) setT(0, "start", Date.now());   // first part starts now
+      $("stTimer").classList.remove("hidden");
+      clearInterval(timerTick); tickTimer(); timerTick = setInterval(tickTimer, 500);
+    }
+    function startSegment(k) {
+      if (!timerBase || getT(k, "start")) return;
+      for (let j = 0; j < k; j++) { if (!getT(j, "start")) setT(j, "start", Date.now()); if (!getT(j, "stop")) setT(j, "stop", Date.now()); }
+      setT(k, "start", Date.now());
+      tickTimer();
+    }
+    function stopTimer(forget = false) {
+      clearInterval(timerTick); timerTick = null;
+      if (forget && timerBase && current) segments().forEach((_, k) => { setT(k, "start", 0); setT(k, "stop", 0); });
+      timerBase = null;
+      $("stTimer").classList.add("hidden");
+    }
+    const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+
+    function tickTimer() {
+      if (!timerBase || !current) return;
+      const segs = segments(), act = activeSeg();
+      $("stSegs").innerHTML = segs.map((label, k) => {
+        const start = getT(k, "start"), stop = getT(k, "stop");
+        const name = esc(label || "Time left at this station");
+        if (!start) return `<div class="st-seg waiting"><span class="st-timer-label">${name}</span><span class="st-timer-clock">${mmss(LIMIT_MS)}</span></div>`;
+        if (stop) return `<div class="st-seg finished"><span class="st-timer-label">${name}</span><span class="st-used">✓ used ${mmss(stop - start)}</span></div>`;
+        const left = start + LIMIT_MS - Date.now();
+        if (left <= 0 && !alerted[k]) { alerted[k] = true; alertTimeUp(); }
+        const cls = left <= 0 ? "over" : left <= WARN_MS ? "warn" : "";
+        return `<div class="st-seg running ${cls}"><span class="st-timer-label">${name}</span><span class="st-timer-clock">${left > 0 ? mmss(left) : "Time's up"}</span></div>`;
+      }).join("");
+      const next = act + 1 < segs.length ? act + 1 : -1;
+      $("stNext").hidden = next < 0;
+      if (next >= 0) $("stNext").innerHTML = `${icon("play", 14)} Start ${esc(segs[next])}`;
+      $("stTimer").classList.toggle("multi", segs.length > 1);
+    }
+    $("stNext").onclick = () => startSegment(activeSeg() + 1);
+    function alertTimeUp() {
+      try { navigator.vibrate?.([300, 150, 300, 150, 300]); } catch { /* not supported */ }
+      try { // three short beeps
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.35, 0.7].forEach(t => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.frequency.value = 880; g.gain.value = 0.2; o.connect(g); g.connect(ctx.destination);
+          o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+        });
+      } catch { /* audio blocked — the red timer is still shown */ }
+    }
+    $("stRestart").onclick = () => {
+      const k = activeSeg(), label = segments()[k] || "this station";
+      if (k < 0 || !confirm(`Restart the 10 minutes for ${label}?`)) return;
+      setT(k, "start", Date.now()); setT(k, "stop", 0); alerted[k] = false; tickTimer();
+    };
+
+    function renderPicked() {
+      const has = !!selected;
+      if (has) startTimer(); else stopTimer();
+      $("pickerBox").classList.toggle("hidden", has);
+      $("picked").classList.toggle("hidden", !has);
+      $("checklist").classList.toggle("hidden", !has);
+      if (!has) {
+        $("personNote").innerHTML = "";
+        ["scenarios", "total", "remarks", "saveBtn"].forEach(id => $(id).classList.remove("hidden"));
+        $("remarks").previousElementSibling?.classList.remove("hidden");
+        renderResults(); return;
+      }
+      $("pickedName").textContent = fullName(selected);
+      $("pickedMeta").textContent = `${selected.company} · ${selected.role} · ${selected.region}`;
+      // which stations this technician has already completed
+      const done = selected.stations || [];
+      $("checklist").innerHTML = `<span class="muted">Stations:</span> ` + stations.map(s =>
+        `<span class="chk ${done.includes(s.name) ? "is-done" : ""} ${s.name === current?.name ? "is-current" : ""}">${done.includes(s.name) ? "✓" : "○"} ${esc(s.name)}</span>`).join("");
+      const locked = done.includes(current?.name);
+      $("personNote").innerHTML = locked
+        ? `<div class="alert error">This technician's scores for this station were already submitted and can't be changed.
+            Choose another technician.</div>` : "";
+      $("scenarios").classList.toggle("hidden", locked);
+      ["total", "remarks", "saveBtn"].forEach(id => $(id).classList.toggle("hidden", locked));
+      $("remarks").previousElementSibling?.classList.toggle("hidden", locked); // its label
+      if (locked) stopTimer();
+    }
+
+    // ---------- scoring ----------
+    function scenarioInput(s, i) {
+      const pill = (k, label) => `<label class="score-pill"><input type="radio" name="sc${i}" value="${k}" data-i="${i}" /><span>${label ?? k}</span></label>`;
+      // "5 and 0 only" → pass / fail
+      if (s.passFail) return `<div class="score-pills pf" role="radiogroup" aria-label="${esc(s.name)} score">` +
+        pill(s.max, `${s.max} · Pass`) + pill(0, "0 · Fail") + `</div>`;
+      const quick = Number.isInteger(s.max) && s.max > 0 && s.max <= QUICK_MAX;
+      if (!quick) return `<input type="number" min="0" max="${s.max}" step="any" data-i="${i}" inputmode="decimal" class="score-num" />`;
+      return `<div class="score-pills" role="radiogroup" aria-label="${esc(s.name)} score">` +
+        Array.from({ length: s.max + 1 }, (_, k) => pill(k)).join("") + `</div>`;
+    }
+    const stationLabel = (st) => `Station ${stations.indexOf(st) + 1} · ${st.name}`;
+    const ruleText = (s) => s.passFail ? `${s.max} or 0 only` : `0 to ${s.max}`;
+    function scoreOf(i) {
+      const r = $("scenarios").querySelector(`input[name="sc${i}"]:checked`);
+      if (r) return Number(r.value);
+      const n = $("scenarios").querySelector(`input.score-num[data-i="${i}"]`);
+      return n && n.value !== "" ? Number(n.value) : null;
+    }
+
+    function openStation(st) {
+      current = st; liveSentFor = null; selected = null;
+      $("scoreForm").reset();
+      $("catTitle").textContent = stationLabel(st);
+      let part = null, n = 0;
+      $("scenarios").innerHTML = st.scenarios.map((s, i) => {
+        let heading = "";
+        if ((s.part || "") !== part) { part = s.part || ""; n = 0; if (part) heading = `<h3 class="part-head">${esc(part)}</h3>`; }
+        n++;
+        return `${heading}
+        <div class="scen" data-i="${i}">
+          <div class="head"><b>${n}. ${esc(s.name)}</b><span class="rule ${s.passFail ? "pf" : ""}">${ruleText(s)}</span></div>
+          ${scenarioInput(s, i)}
+        </div>`;
+      }).join("");
+      watermark($("scenarios"), `${evaluator} · ${st.name}`); // "DO NOT SHARE" + evaluator + date over the scenarios
+      renderPicked(); updateTotal();
+      show("scoreForm");
+    }
+
+    const maxTotal = () => current.scenarios.reduce((a, s) => a + Number(s.max), 0);
+    function updateTotal() {
+      let t = 0, n = 0;
+      current.scenarios.forEach((_, i) => { const v = scoreOf(i); if (v != null) { t += v; n++; } });
+      $("total").textContent = `Total: ${t} / ${maxTotal()}` + (n < current.scenarios.length ? `  ·  ${current.scenarios.length - n} left` : "");
+      return t;
+    }
+    // First score entered for a technician → status "Live" on the dashboard.
+    function onScore(e) {
+      if (e.target.dataset.i !== undefined) {
+        e.target.closest(".scen")?.classList.remove("missing");
+        const k = segOfScenario(Number(e.target.dataset.i));  // first score in 4.2 → start 4.2's 10 minutes
+        if (selected && k > activeSeg()) startSegment(k);
+      }
+      updateTotal();
+      if (!selected || liveSentFor === selected.id) return;
+      liveSentFor = selected.id;
+      api("practicalLive", { pin, id: selected.id }).catch(() => { liveSentFor = null; });
+    }
+    $("scenarios").addEventListener("input", onScore);
+    $("scenarios").addEventListener("change", onScore);
+    // (no station switching: the "Stations" buttons are hidden and typed #station=… addresses are ignored)
+
+    $("scoreForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selected) { flash("error", "Please choose the technician being evaluated."); return; }
+      const scores = {};
+      let firstMissing = null;
+      current.scenarios.forEach((s, i) => {
+        const v = scoreOf(i);
+        const bad = v == null || isNaN(v) || v < 0 || v > s.max || (s.passFail && v !== 0 && v !== s.max);
+        $("scenarios").querySelector(`.scen[data-i="${i}"]`).classList.toggle("missing", bad);
+        if (bad && firstMissing === null) firstMissing = i;
+        scores[s.name] = v;
+      });
+      if (firstMissing !== null) {
+        $("scenarios").querySelector(`.scen[data-i="${firstMissing}"]`).scrollIntoView({ block: "center" });
+        return;
+      }
+      if ((selected.stations || []).includes(current.name)) { renderPicked(); return; } // already submitted → locked
+
+      // Step 2: confirmation page
+      pending = { person: selected, scores, total: updateTotal(), max: maxTotal(), remarks: $("remarks").value.trim().toUpperCase() };
+      $("confirmWho").innerHTML = [
+        ["Technician", fullName(selected)], ["Company", selected.company], ["Station", stationLabel(current)], ["Evaluator", evaluator],
+      ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+      let part = null;
+      $("confirmRows").innerHTML = current.scenarios.map(s => {
+        let head = "";
+        if ((s.part || "") !== part) { part = s.part || ""; if (part) head = `<tr class="part-row"><td colspan="2">${esc(part)}</td></tr>`; }
+        const v = scores[s.name];
+        return `${head}<tr><td>${esc(s.name)}</td><td class="num"><b>${v}</b> / ${s.max}${s.passFail ? (v === s.max ? " · Pass" : " · Fail") : ""}</td></tr>`;
+      }).join("");
+      $("confirmTotal").textContent = `Total: ${pending.total} / ${pending.max}`;
+      watermark($("confirmRows").closest(".table-wrap"), `${evaluator} · ${current.name}`);
+      $("confirmRemarks").innerHTML = pending.remarks ? `<p><b>Remarks:</b> ${esc(pending.remarks)}</p>` : "";
+      $("msg").innerHTML = ""; showDemoBanner($("msg"));
+      show("confirmPage");
+    });
+
+    let pending = null;
+    $("backToEdit").onclick = () => show("scoreForm");
+
+    $("submitFinal").onclick = async () => {
+      if (!pending) return;
+      const { person, scores, total, max, remarks } = pending, tech = fullName(person), st = current;
+      $("submitFinal").disabled = $("backToEdit").disabled = true; $("submitFinal").textContent = "Submitting…";
+      try {
+        try {
+          await api("practicalSave", { pin, evaluator, id: person.id, station: st.name, scores, remarks });
+        } catch (err) {
+          // Our first try was saved but its reply got lost; the automatic retry then finds it "already scored" → success.
+          if (!(err.code === "already_scored" && err.afterRetry)) throw err;
+        }
+        const recent = JSON.parse(localStorage.getItem("recentScores") || "[]");
+        recent.unshift({ time: new Date().toLocaleTimeString(), tech, cat: st.name, total, max });
+        localStorage.setItem("recentScores", JSON.stringify(recent.slice(0, 30)));
+        (person.stations ||= []).includes(st.name) || person.stations.push(st.name);
+        stopTimer(true);       // this technician is done here — clear their timer
+        pending = null;
+        $("doneText").innerHTML = `<b>${esc(tech)}</b> — <b>${total} / ${max}</b> at ${esc(stationLabel(st))}.`;
+        $("msg").innerHTML = ""; showDemoBanner($("msg"));
+        show("donePage");
+        loadPeople();
+      } catch (err) {
+        if (err.code === "already_scored") {
+          (person.stations ||= []).includes(st.name) || person.stations.push(st.name);
+          stopTimer(true); pending = null;
+          openStation(st);
+          flash("error", esc(errorText(err)));
+        } else {
+          flash("error", "Could not submit: " + esc(errorText(err)) + " Your scores are still on this page — press Submit again.");
+          if (err.code === "bad_pin") $("logout").click();
+        }
+      } finally {
+        $("submitFinal").disabled = $("backToEdit").disabled = false; $("submitFinal").innerHTML = `${icon("check")} Submit final scores`;
+      }
+    };
+    $("nextTech").onclick = () => { $("msg").innerHTML = ""; showDemoBanner($("msg")); openStation(current); };
+
+
+    route();
+  </script>
+</body>
+</html>

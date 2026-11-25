@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>2026 Vendor's Technicians Evaluation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top" data-page="home" data-sub="Dashboard"></header>
+  <main class="wide">
+    <div id="msg"></div>
+
+    <div class="session-bar">
+      <span class="session-badge" id="session"><span class="dot"></span><span id="sessionText"></span></span>
+      <span class="muted session-meta"><span><i data-icon="refresh" data-size="14"></i> <span id="updated">Loading…</span></span> · <span id="clock"></span>
+        <button type="button" class="secondary small tv-btn" id="tvBtn" title="Full-screen view for a TV or projector"><i data-icon="tv" data-size="16"></i> Projector mode</button></span>
+    </div>
+
+    <section class="kpis">
+      <div class="kpi main"><div class="kpi-top"><div class="label">Attendance</div><span class="kpi-ic"><i data-icon="users"></i></span></div>
+        <div class="value" id="kAtt">–</div><div class="sub">registered participants</div></div>
+      <div class="kpi ongoing"><div class="kpi-top"><div class="label">Ongoing Theoretical</div><span class="kpi-ic"><i data-icon="pen"></i></span></div>
+        <div class="value" id="kTheoOn">–</div><div class="sub" id="kTheoOnSub"></div></div>
+      <div class="kpi done"><div class="kpi-top"><div class="label">Done Theoretical</div><span class="kpi-ic"><i data-icon="checkCircle"></i></span></div>
+        <div class="value" id="kTheoDone">–</div><div class="sub" id="kTheoDoneSub"></div></div>
+      <div class="kpi ongoing"><div class="kpi-top"><div class="label">Ongoing Practical</div><span class="kpi-ic"><i data-icon="wrench"></i></span></div>
+        <div class="value" id="kPracOn">–</div><div class="sub" id="kPracOnSub"></div></div>
+      <div class="kpi done"><div class="kpi-top"><div class="label">Done Practical</div><span class="kpi-ic"><i data-icon="checkCircle"></i></span></div>
+        <div class="value" id="kPracDone">–</div><div class="sub" id="kPracDoneSub"></div></div>
+    </section>
+
+    <section class="card" id="breakdownCard">
+      <div class="card-head"><h2>By Company</h2><span class="muted">Done = submitted theoretical · scored at all practical stations</span></div>
+      <div class="table-wrap">
+        <table class="breakdown">
+          <thead><tr><th>Company</th><th class="num">Registered</th><th>Theoretical done</th><th>Practical done</th></tr></thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="participantsCard">
+      <div class="card-head">
+        <h2>Participants</h2>
+        <span class="muted" id="count"></span>
+      </div>
+      <div class="filters">
+        <div class="search-field"><i data-icon="search"></i><input id="fSearch" type="search" placeholder="Search name…" aria-label="Search name" /></div>
+        <select id="fCompany" aria-label="Company"><option value="">All companies</option></select>
+        <select id="fRegion" aria-label="Region"><option value="">All regions</option></select>
+        <select id="fArea" aria-label="Area"><option value="">All areas</option></select>
+        <select id="fRole" aria-label="Role"><option value="">All roles</option></select>
+      </div>
+      <div class="table-wrap" id="peopleWrap">
+        <table class="people-table">
+          <thead><tr>
+            <th>#</th><th>Company</th><th>Name</th><th>Role</th><th>Region</th><th>Area</th>
+            <th>Theoretical Evaluation</th><th>Practical Evaluation</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="empty">No participants registered yet.</p>
+    </section>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, showDemoBanner } from "./js/api.js";
+    import { COMPANIES, REGIONS, ROLES, AREAS } from "./js/config.js";
+    import { buildBoard, currentSession, esc, pill } from "./js/people.js";
+    import { icon } from "./js/icons.js";
+
+    const $ = (id) => document.getElementById(id);
+    showDemoBanner($("msg"));
+    const fill = (sel, items) => items.forEach(v => sel.insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`));
+    fill($("fCompany"), COMPANIES); fill($("fRegion"), REGIONS); fill($("fArea"), Object.keys(AREAS)); fill($("fRole"), ROLES); $("fRole").insertAdjacentHTML("beforeend", `<option value="__other">Other roles</option>`);
+
+    let board = null;
+    const REFRESH_MS = 15000;
+
+    async function load() {
+      try {
+        board = await api("board", {}, { retries: 2 });
+        $("updated").textContent = "Updated " + new Date().toLocaleTimeString();
+        $("msg").querySelector(".alert.error")?.remove();
+        render();
+      } catch (e) {
+        $("updated").textContent = "Could not refresh";
+        if (!$("msg").querySelector(".alert.error"))
+          $("msg").insertAdjacentHTML("beforeend", `<div class="alert error">${esc(errorText(e))}</div>`);
+      }
+    }
+    load();
+    setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+    ["fSearch", "fCompany", "fRegion", "fArea", "fRole"].forEach(id => $(id).addEventListener("input", render));
+
+    let lastSession = currentSession();
+    setInterval(() => {
+      $("clock").textContent = new Date().toLocaleString();
+      if (currentSession() !== lastSession) { lastSession = currentSession(); render(); }
+    }, 1000);
+
+    function render() {
+      const session = currentSession();
+      $("session").classList.toggle("pm", session === "PM");
+      $("sessionText").textContent = session === "AM" ? "Morning Session" : "Afternoon Session";
+      if (!board) return;
+
+      const { rows, kpi } = buildBoard(board, session);
+      const half = Math.floor(kpi.attendance / 2), rest = kpi.attendance - half;
+      const theoSize = session === "AM" ? half : rest, pracSize = session === "AM" ? rest : half;
+      const nSt = board.stationsTotal || 0;
+      $("kAtt").textContent = kpi.attendance;
+      $("kTheoOn").textContent = kpi.theoOngoing;
+      $("kTheoOnSub").textContent = `of ${theoSize} assigned this session`;
+      $("kTheoDone").textContent = kpi.theoDone;
+      $("kTheoDoneSub").textContent = `of ${kpi.attendance} submitted`;
+      $("kPracOn").textContent = kpi.pracOngoing;
+      $("kPracOnSub").textContent = `of ${pracSize} assigned this session`;
+      $("kPracDone").textContent = kpi.pracDone;
+      $("kPracDoneSub").textContent = `of ${kpi.attendance} · all ${nSt} stations`;
+
+      const q = $("fSearch").value.trim().toLowerCase();
+      const f = { company: $("fCompany").value, region: $("fRegion").value, area: $("fArea").value, role: $("fRole").value };
+      const shown = rows
+        .filter(r => (!q || r.name.toLowerCase().includes(q)) && (!f.company || r.company === f.company)
+          && (!f.region || r.region === f.region) && (!f.area || r.area === f.area) && (!f.role || (f.role === "__other" ? !ROLES.includes(r.role) : r.role === f.role)))
+        .sort((a, b) => a.company.localeCompare(b.company) || a.name.localeCompare(b.name));
+
+      // (on phones the same rows are shown as cards — see #peopleWrap in style.css)
+      $("rows").innerHTML = shown.map((r, i) => `<tr>
+        <td class="muted idx">${i + 1}</td><td class="meta m1">${esc(r.company)}</td><td class="name">${esc(r.name)}</td>
+        <td class="meta">${esc(r.role)}</td><td class="meta">${esc(r.region)}</td><td class="meta area">${r.area ? esc(r.area) : `<span class="muted">—</span>`}</td>
+        <td class="st" data-label="Theoretical">${pill(r.theo)}</td>
+        <td class="st" data-label="Practical">${pill(r.prac, r.prac === "Ongoing" ? ` · ${r.stationsDone}/${nSt}` : "")}</td></tr>`).join("");
+      $("empty").classList.toggle("hidden", shown.length > 0);
+      $("count").textContent = shown.length === rows.length ? `${rows.length} total` : `${shown.length} of ${rows.length}`;
+      renderBreakdown(rows);
+    }
+
+    // ---------- per-company breakdown (thin progress bars + the numbers as text) ----------
+    function bar(done, of, label) {
+      const pct = of ? Math.round(done / of * 100) : 0;
+      return `<div class="meter" title="${esc(label)}: ${done} of ${of} (${pct}%)">
+        <div class="meter-track"><div class="meter-fill" style="width:${pct}%"></div></div>
+        <span class="meter-text"><b>${done}</b> / ${of}</span></div>`;
+    }
+    function renderBreakdown(rows) {
+      const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
+      const line = (name, list) => `<tr><td class="co">${esc(name)}</td><td class="num" data-label="registered">${list.length}</td>
+        <td class="m" data-label="Theoretical">${bar(list.filter(r => r.theo === "Done").length, list.length, name + " · Theoretical done")}</td>
+        <td class="m" data-label="Practical">${bar(list.filter(r => r.prac === "Done").length, list.length, name + " · Practical done")}</td></tr>`;
+      $("breakdown").innerHTML = companies.map(c => line(c, rows.filter(r => r.company === c))).join("") +
+        `<tr class="total-row">${line("All companies", rows).slice(4)}`;
+    }
+
+    // ---------- projector mode (full screen, big text, auto-scrolling list) ----------
+    let scrollTimer = null;
+    function setTv(on) {
+      document.body.classList.toggle("tv", on);
+      $("tvBtn").innerHTML = on ? `${icon("x", 16)} Exit projector mode` : `${icon("tv", 16)} Projector mode`;
+      clearInterval(scrollTimer);
+      if (on) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+        // slowly scroll the participant list, pause at the end, then start again
+        let pause = 0;
+        scrollTimer = setInterval(() => {
+          const w = $("peopleWrap");
+          if (pause > 0) { pause--; if (!pause) w.scrollTop = 0; return; }
+          if (w.scrollTop + w.clientHeight >= w.scrollHeight - 2) { pause = 60; return; }
+          w.scrollTop += 1;
+        }, 50);
+      } else if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    }
+    $("tvBtn").onclick = () => setTv(!document.body.classList.contains("tv"));
+    document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("tv")) setTv(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("tv")) setTv(false); });
+    if (new URLSearchParams(location.search).has("tv")) setTv(true);
+
+    render();
+  </script>
+</body>
+</html>
