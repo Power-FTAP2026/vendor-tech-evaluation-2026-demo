@@ -16,7 +16,7 @@ const links = [
 const showNav = !["register", "exam"].includes(page);
 el.innerHTML = `
   <div class="inner">
-    <a class="brand" href="${showNav ? "index.html" : "#"}" ${showNav ? "" : 'onclick="return false"'}>
+    <a class="brand" href="${showNav || DEMO_SITE ? "index.html" : "#"}" ${showNav || DEMO_SITE ? 'title="Back to Dashboard"' : 'onclick="return false"'}>
       <img src="assets/logo.jpg" alt="${EVENT.org}" width="140" height="47" />
       <span class="divider"></span>
       <span class="brand-text"><span class="app-name">${EVENT.title}${DEMO_SITE ? ` <span class="demo-pill">DEMO</span>` : ""}</span>${el.dataset.sub ? `<span class="page-name">${el.dataset.sub}</span>` : ""}</span>

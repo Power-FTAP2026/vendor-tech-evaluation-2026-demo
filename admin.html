@@ -74,6 +74,12 @@
 
     // ---------- QR codes ----------
     const base = location.href.replace(/[^/]*([?#].*)?$/, "");
+    if (DEMO_SITE) { // demo website: no QR codes (so nobody prints/posts the demo by mistake)
+      const sec = $("qrGrid").closest("section");
+      sec.querySelector(".card-head button").remove();
+      sec.querySelector(".lead").textContent = "Not available on the demo website.";
+      $("qrGrid").outerHTML = `<div class="alert info">QR codes are blocked on the demo website. Print the QR codes from the Admin page of the real website.</div>`;
+    } else
     [["Registration", "register.html"], ["Theoretical Exam", "exam.html"], ["Practical Evaluation (evaluators)", "practical.html"]]
       .forEach(([label, page], i) => {
         const url = base + page;
