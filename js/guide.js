@@ -1,6 +1,6 @@
 // DEMO WEBSITE ONLY: step-by-step instruction popups ("this is for X, tap here to do Y").
 // Loaded by js/header.js only when DEMO_SITE is true. Each page has "screens" (e.g. Practical: login → station →
-// confirm); the first time a screen appears its guide opens by itself, and the "? Guide" button replays it.
+// confirm); each time a page is opened its guide pops up right away, and the "? Guide" button replays it.
 const PAGE = document.querySelector("header.top")?.dataset.page || "";
 
 const GUIDES = {
@@ -82,9 +82,8 @@ const screens = GUIDES[PAGE];
 if (screens) init();
 
 function init() {
-  const seenKey = (s) => "guideSeen:" + PAGE + ":" + s.key;
   const visible = (sel) => { const el = sel && document.querySelector(sel); return el && el.getClientRects().length ? el : null; };
-  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k) => { try { localStorage.setItem(k, "1"); } catch { /* ignore */ } } };
+  const shown = new Set(); // screens already shown since this page was opened (resets on every visit)
 
   // "? Guide" button
   const fab = document.createElement("button");
@@ -95,15 +94,16 @@ function init() {
   const current = () => [...screens].reverse().find(s => visible(s.when));
   let active = null;
 
-  // open each screen's guide by itself the first time it appears
-  setInterval(() => {
+  // open the guide right away whenever a page (or a new screen on it) is opened
+  const check = () => {
     if (active) return;
     const s = current();
-    if (s && !store.get(seenKey(s))) open(s);
-  }, 700);
+    if (s && !shown.has(s.key)) open(s);
+  };
+  check(); setInterval(check, 250);
 
   function open(screen) {
-    store.set(seenKey(screen));
+    shown.add(screen.key);
     const steps = screen.steps.filter(([sel]) => !sel || visible(sel));
     if (!steps.length) return;
     const dim = document.createElement("div"); dim.className = "guide-dim";
