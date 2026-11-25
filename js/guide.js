@@ -6,7 +6,7 @@ const PAGE = document.querySelector("header.top")?.dataset.page || "";
 const GUIDES = {
   home: [{
     key: "home", when: "#kAtt", steps: [
-      [null, "Welcome to the DEMO website", "This is a safe place to practise. Nothing you do here is saved to the real evaluation. This short guide shows what each part is for."],
+      [null, "Welcome to the DEMO website", "This is a safe place to practice. Nothing you do here is saved to the real evaluation. This short guide shows what each part is for."],
       ["header.top nav", "Pages", "Use these tabs to move between Dashboard, Registration, Theoretical, Practical and Admin. Click the FTAP logo anytime to come back to this Dashboard."],
       ["#session", "Session and time", "Shows whether it is the Morning (AM) or Afternoon (PM) session, with the current time."],
       [".kpis", "Live counts", "How many technicians registered, and how many are taking or have finished the Theoretical exam and the Practical evaluation. Updates by itself."],
@@ -41,7 +41,7 @@ const GUIDES = {
       [null, "Theoretical exam", "60 questions in 60 minutes, opened by scanning the Theoretical QR code. Only registered technicians can start it."],
       ["#instructions", "Instructions", "Read these before starting."],
       ["#surname", "Your name", "Choose the company and type the name exactly as registered. The app checks that the person is registered."],
-      ["#agree", "Privacy notice", "Tick the box to accept the data privacy notice."],
+      ["#agree", "Privacy notice", "Check the box to accept the data privacy notice."],
       ["#startBtn", "Start exam", "Starts the exam and the 60-minute timer. On the demo website this button is turned off: the real questions are never shown here."],
     ],
   }],

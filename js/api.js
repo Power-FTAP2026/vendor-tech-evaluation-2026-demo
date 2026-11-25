@@ -88,7 +88,7 @@ export function showDemoBanner(el) {
     return;
   }
   el.innerHTML = DEMO_SITE
-    ? `<div class="alert info"><b>DEMO website:</b> practise freely — nothing here is saved to the real evaluation, and the
+    ? `<div class="alert info"><b>DEMO website:</b> practice freely — nothing here is saved to the real evaluation, and the
         Theoretical exam can't be started here. Evaluators: log in to Practical with your evaluator PIN to review your
         station's scenarios (practice scores are not saved). <a href="#" id="demoClear">Start over</a></div>`
     : `<div class="alert info"><b>Demo mode:</b> data is saved only in this browser — nothing goes to the
