@@ -566,3 +566,16 @@ body.is-shielded .privacy-shield { display: flex; position: fixed; inset: 0; z-i
 .wm-host { position: relative; }
 .wm-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; background-repeat: repeat; }
 @media print { .protected, .wm-host { display: none !important; } body.no-copy main::after { content: "Printing is not allowed."; } }
+
+/* ---------- demo website: instruction popups (js/guide.js) ---------- */
+.guide-fab { position: fixed; right: 16px; bottom: 16px; z-index: 900; border-radius: var(--r-pill); min-height: 44px; padding: 8px 16px; box-shadow: var(--sh-3); gap: 8px; }
+.guide-fab b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: var(--crimson); font-size: .9rem; }
+.guide-dim { position: fixed; inset: 0; z-index: 1000; background: rgba(29, 27, 26, .55); }
+.guide-spot { position: fixed; z-index: 1000; border-radius: var(--r); pointer-events: none; box-shadow: 0 0 0 3px var(--amber), 0 0 0 9999px rgba(29, 27, 26, .55); transition: all .2s ease; }
+.guide-tip { position: fixed; z-index: 1001; background: var(--surface); color: var(--ink); border-radius: var(--r-lg); box-shadow: var(--sh-3); padding: 16px 18px 14px; border-top: 4px solid var(--crimson); }
+.guide-tip h3 { margin: 2px 0 6px; font-family: var(--head); font-size: 1.1rem; }
+.guide-tip p { margin: 0 0 14px; color: var(--ink-2); line-height: 1.5; font-size: .95rem; }
+.guide-count { font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--orange); }
+.guide-actions { display: flex; gap: 8px; align-items: center; }
+.guide-actions span { flex: 1; }
+@media print { .guide-fab, .guide-dim, .guide-spot, .guide-tip { display: none !important; } }
