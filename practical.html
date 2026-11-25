@@ -113,7 +113,7 @@
   <script type="module" src="js/header.js"></script>
   <script type="module">
     import { api, errorText, showDemoBanner, isConfigured } from "./js/api.js";
-    import { EVENTS, todaysEvent, PRACTICAL } from "./js/config.js";
+    import { EVENTS, todaysEvent, PRACTICAL, DEMO_SITE } from "./js/config.js";
     import { fullName, esc } from "./js/people.js";
     import { forceUpper } from "./js/uppercase.js";
     import { icon } from "./js/icons.js";
@@ -143,7 +143,8 @@
       return days.map(f).join(" & ");
     }
     $("event").addEventListener("change", fillEvaluators);
-    if (!isConfigured) $("pinHint").innerHTML = "The PIN is case-sensitive. <b>Demo mode practice PIN: 2468</b>";
+    if (DEMO_SITE) $("pinHint").innerHTML = "The PIN is case-sensitive. <b>Demo website:</b> use your real evaluator PIN to review your station. Practice scores are not saved.";
+    else if (!isConfigured) $("pinHint").innerHTML = "The PIN is case-sensitive. <b>Demo mode practice PIN: 2468</b>";
 
     // Show / hide what is typed in the PIN box
     function setPinVisible(show) {
@@ -207,7 +208,7 @@
         // go straight to their own station (if it exists in the Practical Setup)
         route();
       } catch (err) {
-        flash("error", esc(errorText(err)) + (err.code === "bad_pin" && !isConfigured
+        flash("error", esc(errorText(err)) + (err.code === "bad_pin" && !isConfigured && !DEMO_SITE
           ? " <b>You are in demo mode</b> — use the practice PIN <b>2468</b>, or <a href=\"?demo=0\">switch to LIVE</a> to use the real PIN." : ""));
       } finally { $("loginBtn").disabled = false; }
     });

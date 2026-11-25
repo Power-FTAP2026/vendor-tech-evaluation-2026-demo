@@ -2,7 +2,27 @@
 // tried locally before it is connected to the Google Sheet. Not used once SCRIPT_URL is set.
 import { ApiError } from "./api.js";
 import { currentSession } from "./people.js";
-import { DEMO_SITE } from "./config.js";
+import { DEMO_SITE, SCRIPT_URL } from "./config.js";
+
+// DEMO WEBSITE "review mode": evaluators log in to Practical with the REAL evaluator PIN and see the REAL scenarios of
+// their own station, fetched read-only from the Google backend (which only gives them out with that PIN). Nothing is
+// ever written to Google from the demo: registrations, exams and practice scores stay in this browser.
+const LIVE_REVIEW = DEMO_SITE && /^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
+async function live(action, data) { // read-only calls only: checkPin, practicalConfig
+  let last;
+  for (let a = 0; a < 4; a++) {
+    if (a) await new Promise(r => setTimeout(r, 800 * a));
+    try {
+      const r = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, ...data }) });
+      const j = JSON.parse(await r.text());
+      if (j.ok) return j;
+      if (!(j.retry || j.error === "busy" || j.error === "server_error")) fail(j.error, j.message);
+      last = new ApiError(j.error, j.message);
+    } catch (e) { if (e instanceof ApiError && e.code !== "busy") throw e; last = e; }
+  }
+  throw last instanceof ApiError ? last : new ApiError("network", "No internet connection.");
+}
+const LIVE_STATIONS_KEY = "demoLiveStations"; // this session only (sessionStorage)
 // Same rule as the server: Practical-first people ("P") may not take the exam in the morning.
 const assertExamAllowed = (p) => { if (DEMO_SITE) fail("demo_exam_off", "Starting the exam is turned off on the demo website."); if (p.group === "P" && currentSession() === "AM") fail("wrong_session", "You are scheduled for the Practical Evaluation this morning. Your Theoretical Exam is in the afternoon session."); };
 
@@ -52,6 +72,7 @@ const pub = (p) => ({ id: p.id, fullName: fullName(p), surname: p.surname, first
   company: p.company, employment: p.employment, role: p.role, region: p.region, area: p.area || "", group: p.group });
 const person = (id) => regs().find(p => p.id === id) || fail("not_registered", "This person is not registered.");
 const stations = () => {
+  if (LIVE_REVIEW) { try { const st = JSON.parse(sessionStorage.getItem(LIVE_STATIONS_KEY) || "null"); if (st) return st; } catch { /* ignore */ } }
   const out = [];
   DEMO_PRACTICAL.forEach(([st, part, sc, max, scoring]) => {
     let s = out.find(x => x.name === st); if (!s) out.push(s = { name: st, scenarios: [] });
@@ -160,11 +181,18 @@ const actions = {
     return { submitted: true, score, total: nos.length };
   },
 
-  checkPin(d) { checkPin(d.pin); return {}; },
-  practicalConfig(d) { checkPin(d.pin); return { stations: stations() }; },
+  async checkPin(d) { if (LIVE_REVIEW) { await live("checkPin", { pin: d.pin }); return {}; } checkPin(d.pin); return {}; },
+  async practicalConfig(d) {
+    if (LIVE_REVIEW) { // real scenarios, only with the real evaluator PIN (checked by the Google backend)
+      const j = await live("practicalConfig", { pin: d.pin });
+      try { sessionStorage.setItem(LIVE_STATIONS_KEY, JSON.stringify(j.stations)); } catch { /* ignore */ }
+      return { stations: j.stations };
+    }
+    checkPin(d.pin); return { stations: stations() };
+  },
 
   practicalLive(d) {
-    checkPin(d.pin);
+    if (!LIVE_REVIEW) checkPin(d.pin);
     const p = person(d.id), prac = load("prac", {});
     const r = prac[p.uid] ||= { status: "", stations: [], scores: {} };
     if (!r.status) { r.status = "live"; save("prac", prac); }
@@ -172,7 +200,7 @@ const actions = {
   },
 
   practicalSave(d) {
-    checkPin(d.pin);
+    if (!LIVE_REVIEW) checkPin(d.pin);
     const p = person(d.id), st = stations(), station = st.find(s => s.name === d.station) || fail("bad_station", "Unknown station.");
     const prac = load("prac", {});
     const r = prac[p.uid] ||= { status: "", stations: [], scores: {} };

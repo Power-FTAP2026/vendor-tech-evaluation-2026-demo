@@ -89,7 +89,8 @@ export function showDemoBanner(el) {
   }
   el.innerHTML = DEMO_SITE
     ? `<div class="alert info"><b>DEMO website:</b> practise freely — nothing here is saved to the real evaluation, and the
-        Theoretical exam can't be started here. Evaluator PIN for the demo: <b>2468</b>. <a href="#" id="demoClear">Start over</a></div>`
+        Theoretical exam can't be started here. Evaluators: log in to Practical with your evaluator PIN to review your
+        station's scenarios (practice scores are not saved). <a href="#" id="demoClear">Start over</a></div>`
     : `<div class="alert info"><b>Demo mode:</b> data is saved only in this browser — nothing goes to the
         Google Sheet. <a href="#" id="demoClear">Clear demo data</a>${hasUrl ? ` · <a href="?demo=0">Switch to LIVE</a>` : ""}</div>`;
   el.querySelector("#demoClear").onclick = (e) => {
