@@ -297,7 +297,8 @@
       const am = res.group === "T" ? "Theoretical Exam" : "Practical Evaluation";
       const pm = res.group === "T" ? "Practical Evaluation" : "Theoretical Exam";
       $("schedule").innerHTML = `<div class="sched-row"><span>${icon("sun", 16)} Morning</span><b>${am}</b></div>
-        <div class="sched-row"><span>${icon("sunset", 16)} Afternoon</span><b>${pm}</b></div>`;
+        <div class="sched-row"><span>${icon("sunset", 16)} Afternoon</span><b>${pm}</b></div>
+        ${res.sessionSet ? `<p class="muted" style="margin:6px 0 0">${icon("info", 14)} Your schedule was updated by the staff.</p>` : ""}`;
       $("msg").innerHTML = "";
       window.scrollTo(0, 0);
     }
@@ -305,6 +306,27 @@
     // This device already registered someone → show their confirmation instead of the form.
     const saved = (() => { try { return JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); } catch { return null; } })();
     if (saved?.fullName) showDone(saved);
+
+    // The staff can move someone to the other AM/PM schedule (Admin page): ask the server for the latest schedule
+    // whenever this confirmation is opened or the technician comes back to it.
+    async function refreshSchedule() {
+      let reg, cur;
+      try { reg = JSON.parse(localStorage.getItem("registrant") || "null"); cur = JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); } catch { return; }
+      if (!reg?.surname || !cur?.fullName) return;
+      try {
+        const { person } = await api("findPerson", { company: reg.company, surname: reg.surname, firstName: reg.firstName, mi: reg.mi });
+        if (person.group === cur.group && !!person.sessionSet === !!cur.sessionSet) return;
+        const changed = person.group !== cur.group;
+        Object.assign(cur, { group: person.group, sessionSet: !!person.sessionSet });
+        localStorage.setItem(DEVICE_KEY, JSON.stringify(cur));
+        showDone(cur);
+        if (changed) $("msg").innerHTML = `<div class="alert info"><b>Schedule updated.</b> Please follow the new schedule below.</div>`;
+      } catch { /* offline or not found — keep showing the saved schedule */ }
+    }
+    if (saved?.fullName) {
+      refreshSchedule();
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshSchedule(); });
+    }
 
     // Staff only: register.html?reset clears this device (asks for the evaluator PIN, checked by the server).
     if (new URLSearchParams(location.search).has("reset")) {

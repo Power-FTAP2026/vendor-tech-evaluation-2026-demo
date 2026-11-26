@@ -141,7 +141,8 @@
         });
         if (seq !== lookupSeq) return null;
         found = person;
-        $("regCheck").innerHTML = `<div class="alert ok">Registration found: <b>${esc(person.fullName)}</b> · ${esc(person.company)}</div>`;
+        $("regCheck").innerHTML = `<div class="alert ok">Registration found: <b>${esc(person.fullName)}</b> · ${esc(person.company)}<br>
+          <span>Your schedule: <b>${person.group === "T" ? "AM Theoretical · PM Practical" : "AM Practical · PM Theoretical"}</b>${person.sessionSet ? " (updated by the staff)" : ""}</span></div>`;
       } catch (e) {
         if (seq !== lookupSeq) return null;
         $("regCheck").innerHTML = `<div class="alert error">${esc(errorText(e))}</div>`;
