@@ -37,6 +37,35 @@
       </div>
     </section>
 
+    <section class="card no-print" id="sessCard">
+      <div class="title-row"><span class="title-icon"><i data-icon="calendar" data-size="22"></i></span>
+        <div><h2>Change AM / PM session</h2><p class="lead">Move a registered participant to the other schedule. Needs the evaluator PIN.</p></div></div>
+      <label for="sessSearch">Participant</label>
+      <div class="search-field"><i data-icon="search"></i>
+        <input id="sessSearch" type="search" placeholder="Type part of the surname or first name…" autocomplete="off" /></div>
+      <div id="sessResults" class="tech-results"></div>
+
+      <form id="sessForm" class="hidden" style="margin-top:14px" novalidate>
+        <div class="picked"><div class="row" style="flex-wrap:nowrap"><span class="avatar"><i data-icon="user" data-size="20"></i></span>
+          <div><b id="sessName"></b><div class="muted" id="sessMeta"></div></div></div>
+          <button type="button" class="secondary small" id="sessChange">Change</button></div>
+        <p class="muted" style="margin:12px 0 4px">Choose the new schedule:</p>
+        <label class="choice"><input type="radio" name="sess" value="P" /><span><b><i data-icon="sun" data-size="14"></i></b>
+          <span><b style="all:unset;font-weight:700">AM Practical</b> · PM Theoretical<br><span class="muted">Morning: Practical Evaluation · Afternoon: Theoretical Exam</span></span></span></label>
+        <label class="choice"><input type="radio" name="sess" value="T" /><span><b><i data-icon="sun" data-size="14"></i></b>
+          <span><b style="all:unset;font-weight:700">AM Theoretical</b> · PM Practical<br><span class="muted">Morning: Theoretical Exam · Afternoon: Practical Evaluation</span></span></span></label>
+        <label class="choice hidden" id="sessAutoBox"><input type="radio" name="sess" value="auto" /><span><b><i data-icon="refresh" data-size="14"></i></b>
+          <span><b style="all:unset;font-weight:700">Automatic</b><br><span class="muted">Undo the change: back to the schedule given at registration</span></span></span></label>
+        <label for="sessPin" style="margin-top:12px">Evaluator PIN <span class="req">*</span></label>
+        <div class="pin-wrap">
+          <input id="sessPin" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+          <button type="button" class="pin-toggle" id="sessPinToggle" aria-label="Show PIN" aria-pressed="false"><i data-icon="eye" data-size="16"></i> Show</button>
+        </div>
+        <button type="submit" class="block" id="sessSave"><i data-icon="check" data-size="16"></i> Save new session</button>
+      </form>
+      <div id="sessMsg" style="margin-top:12px"></div>
+    </section>
+
     <section class="card">
       <div class="card-head no-print"><div class="title-row" style="margin:0"><span class="title-icon"><i data-icon="qr" data-size="22"></i></span>
         <div><h2>QR Codes</h2><p class="lead">Print and post these at the venue.</p></div></div>
@@ -49,8 +78,8 @@
   <script type="module">
     import { api, errorText, isConfigured, showDemoBanner } from "./js/api.js";
     import { LINKS, DEMO_SITE } from "./js/config.js";
-    import { esc } from "./js/people.js";
-    import { icon } from "./js/icons.js";
+    import { esc, fullName } from "./js/people.js";
+    import { icon, hydrateIcons } from "./js/icons.js";
 
     const $ = (id) => document.getElementById(id);
     showDemoBanner($("msg"));
@@ -71,6 +100,58 @@
         $("testResult").innerHTML = `<span style="color:var(--err)">${icon("xCircle", 16)} ${esc(errorText(e))}</span>`;
       }
     };
+
+    // ---------- Change AM / PM session ----------
+    const SCHED = { P: "AM Practical · PM Theoretical", T: "AM Theoretical · PM Practical" };
+    const schedPill = (p) => `<span class="pill ${p.group === "P" ? "am-batch" : "pm-batch"}">${SCHED[p.group]}</span>${p.sessionSet ? ` <span class="muted">(changed by admin)</span>` : ""}`;
+    let people = [], picked = null;
+    async function loadPeople() {
+      try { people = (await api("board")).rows; } catch (e) { $("sessResults").innerHTML = `<div class="alert error">${esc(errorText(e))}</div>`; return; }
+      renderPeople();
+    }
+    function renderPeople() {
+      const words = $("sessSearch").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      if (!words.length) { $("sessResults").innerHTML = `<p class="muted">Start typing to find the participant (${people.length} registered).</p>`; return; }
+      const hits = people.filter(p => { const t = `${fullName(p)} ${p.company}`.toLowerCase(); return words.every(w => t.includes(w)); }).slice(0, 8);
+      $("sessResults").innerHTML = hits.length ? hits.map(p => `<button type="button" class="tech-hit" data-id="${esc(p.id)}">
+          <span><b>${esc(fullName(p))}</b><span class="muted"> · ${esc(p.company)}</span></span><span>${schedPill(p)}</span></button>`).join("")
+        : `<p class="muted">No registered participant matches “${esc($("sessSearch").value)}”.</p>`;
+    }
+    function pick(p) {
+      picked = p;
+      $("sessName").textContent = fullName(p);
+      $("sessMeta").innerHTML = `${esc(p.company)} · now: ${schedPill(p)}`;
+      document.querySelectorAll('input[name="sess"]').forEach(r => { r.checked = false; r.closest(".choice").classList.toggle("hidden", r.value === p.group || (r.value === "auto" && !p.sessionSet)); });
+      $("sessForm").classList.remove("hidden"); $("sessResults").innerHTML = ""; $("sessSearch").closest(".search-field").classList.add("hidden");
+    }
+    function unpick() { picked = null; $("sessForm").classList.add("hidden"); $("sessSearch").closest(".search-field").classList.remove("hidden"); renderPeople(); $("sessSearch").focus(); }
+    $("sessSearch").addEventListener("focus", () => { if (!people.length) loadPeople(); }, { once: true });
+    $("sessSearch").addEventListener("input", renderPeople);
+    $("sessResults").addEventListener("click", (e) => { const b = e.target.closest(".tech-hit"); if (b) pick(people.find(p => p.id === b.dataset.id)); });
+    $("sessChange").onclick = () => { $("sessMsg").innerHTML = ""; unpick(); };
+    $("sessPinToggle").onclick = () => {
+      const show = $("sessPin").type === "password"; $("sessPin").type = show ? "text" : "password";
+      $("sessPinToggle").innerHTML = show ? `${icon("eyeOff", 16)} Hide` : `${icon("eye", 16)} Show`;
+      $("sessPinToggle").setAttribute("aria-pressed", String(show));
+    };
+    $("sessForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const choice = document.querySelector('input[name="sess"]:checked')?.value;
+      if (!choice) { $("sessMsg").innerHTML = `<div class="alert error">Choose the new schedule.</div>`; return; }
+      if (!$("sessPin").value) { $("sessMsg").innerHTML = `<div class="alert error">Enter the evaluator PIN.</div>`; $("sessPin").focus(); return; }
+      const label = choice === "auto" ? "the automatic schedule" : SCHED[choice];
+      if (!confirm(`Move ${fullName(picked)} to ${label}?`)) return;
+      $("sessSave").disabled = true; $("sessMsg").innerHTML = `<p class="muted">Saving…</p>`;
+      try {
+        const r = await api("setSession", { pin: $("sessPin").value, id: picked.id, session: choice });
+        const p = r.person; people = people.map(x => x.id === p.id ? { ...x, ...p } : x);
+        $("sessMsg").innerHTML = `<div class="alert ok"><b>${esc(fullName(p))}</b> is now: ${SCHED[p.group]}. The Dashboard and the exam's morning rule follow the new schedule.</div>`;
+        $("sessSearch").value = ""; unpick();
+      } catch (err) {
+        $("sessMsg").innerHTML = `<div class="alert error">${esc(errorText(err))}</div>`;
+      } finally { $("sessSave").disabled = false; }
+    });
+    hydrateIcons();
 
     // ---------- QR codes ----------
     const base = location.href.replace(/[^/]*([?#].*)?$/, "");

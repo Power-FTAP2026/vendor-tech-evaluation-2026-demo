@@ -58,6 +58,9 @@ export function buildBoard(board, session) {
     theoOngoing: rows.filter(r => r.group === theoGroup && r.theo !== "Done").length,
     pracDone: rows.filter(r => r.prac === "Done").length,
     pracOngoing: rows.filter(r => r.group === pracGroup && r.prac !== "Done").length,
+    // actual schedule (an admin can move people between AM and PM, so it isn't always a 50/50 split)
+    theoAssigned: rows.filter(r => r.group === theoGroup).length,
+    pracAssigned: rows.filter(r => r.group === pracGroup).length,
   };
   return { rows, kpi };
 }

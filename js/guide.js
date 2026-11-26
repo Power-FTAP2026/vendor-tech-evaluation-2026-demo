@@ -73,6 +73,7 @@ const GUIDES = {
   admin: [{
     key: "admin", when: "#testBtn", steps: [
       ["#testBtn", "Test connection", "Checks that the website is working."],
+      ["#sessCard", "Change AM / PM session", "Find a registered participant and move them to the other schedule (AM Practical or AM Theoretical). Needs the PIN. The Dashboard and the exam follow the new schedule."],
       ["#msg", "QR codes", "QR codes are not available on the demo. Print them from the Admin page of the real website."],
     ],
   }],

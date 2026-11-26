@@ -117,8 +117,7 @@
       if (!board) return;
 
       const { rows, kpi } = buildBoard(board, session);
-      const half = Math.floor(kpi.attendance / 2), rest = kpi.attendance - half;
-      const theoSize = session === "AM" ? half : rest, pracSize = session === "AM" ? rest : half;
+      const theoSize = kpi.theoAssigned, pracSize = kpi.pracAssigned;
       const nSt = board.stationsTotal || 0;
       $("kAtt").textContent = kpi.attendance;
       $("kTheoOn").textContent = kpi.theoOngoing;

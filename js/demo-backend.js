@@ -68,9 +68,11 @@ const slug = (s) => String(s || "").toLowerCase().normalize("NFKD").replace(/[\u
 const key = (p) => slug(`${p.surname} ${p.firstName} ${p.mi || ""}`);
 const fullName = (p) => { const mi = String(p.mi || "").replace(/\./g, "").trim(); return `${p.surname}, ${p.firstName}${mi ? " " + mi.toUpperCase() + "." : ""}`; };
 const title = (s) => String(s).trim().replace(/\s+/g, " ").toUpperCase(); // free text is saved in UPPER CASE
-const regs = () => load("reg", []).map((p, i) => ({ ...p, id: key(p), group: i % 2 === 0 ? "P" : "T" }));
+// group: alternating by registration order, unless an admin changed it (same rule as the server's "Session Override")
+const regs = () => { const ov = load("session", {}); return load("reg", []).map((p, i) => { const id = key(p);
+  return { ...p, id, group: ov[id] || (i % 2 === 0 ? "P" : "T"), sessionSet: !!ov[id] }; }); };
 const pub = (p) => ({ id: p.id, fullName: fullName(p), surname: p.surname, firstName: p.firstName, mi: p.mi,
-  company: p.company, employment: p.employment, role: p.role, region: p.region, area: p.area || "", group: p.group });
+  company: p.company, employment: p.employment, role: p.role, region: p.region, area: p.area || "", group: p.group, sessionSet: !!p.sessionSet });
 const person = (id) => regs().find(p => p.id === id) || fail("not_registered", "This person is not registered.");
 const stations = () => {
   if (LIVE_REVIEW) { try { const st = JSON.parse(sessionStorage.getItem(LIVE_STATIONS_KEY) || "null"); if (st) return st; } catch { /* ignore */ } }
@@ -182,6 +184,14 @@ const actions = {
     return { submitted: true, score, total: nos.length };
   },
 
+  async setSession(d) { // Admin: P = AM Practical, T = AM Theoretical, auto = registration order
+    if (LIVE_REVIEW) await live("checkPin", { pin: d.pin, review: true }); else checkPin(d.pin);
+    if (!["P", "T", "auto"].includes(d.session)) fail("bad_session", "Choose AM Practical or AM Theoretical.");
+    const p = person(d.id), ov = load("session", {});
+    if (d.session === "auto") delete ov[p.id]; else ov[p.id] = d.session;
+    save("session", ov);
+    return { person: pub(person(d.id)) };
+  },
   async checkPin(d) { if (LIVE_REVIEW) { await live("checkPin", { pin: d.pin, review: true }); return {}; } checkPin(d.pin); return {}; },
   async practicalConfig(d) {
     if (LIVE_REVIEW) { // real scenarios, only with the DEMO PIN (checked by the Google backend)
