@@ -50,7 +50,7 @@ const GUIDES = {
       [null, "Practical evaluation", "This page is for evaluators only."],
       ["#event", "Event", "Choose the event (location and dates)."],
       ["#evaluator", "Your name", "Choose your name. Your station is shown next to it, and you will only see that station."],
-      ["#pin", "Evaluator PIN", "Enter your evaluator PIN. The eye button shows or hides it. On the demo, your PIN lets you review your station's real scenarios; scores are not saved."],
+      ["#pin", "Evaluator PIN", "Enter your evaluator PIN. The eye button shows or hides it. On the demo website, use the demo PIN: it lets you review your station's real scenarios; scores are not saved."],
       ["#loginBtn", "Continue", "Tap to open your station."],
     ] },
     { key: "station", when: "#pickerBox", steps: [

@@ -4,8 +4,9 @@ import { ApiError } from "./api.js";
 import { currentSession } from "./people.js";
 import { DEMO_SITE, SCRIPT_URL } from "./config.js";
 
-// DEMO WEBSITE "review mode": evaluators log in to Practical with the REAL evaluator PIN and see the REAL scenarios of
-// their own station, fetched read-only from the Google backend (which only gives them out with that PIN). Nothing is
+// DEMO WEBSITE "review mode": evaluators log in to Practical with the DEMO PIN (script property DEMO_PIN) and see the
+// REAL scenarios of their own station, fetched read-only from the Google backend (which only gives them out with that PIN;
+// the demo PIN can never save scores). Nothing is
 // ever written to Google from the demo: registrations, exams and practice scores stay in this browser.
 const LIVE_REVIEW = DEMO_SITE && /^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
 async function live(action, data) { // read-only calls only: checkPin, practicalConfig
@@ -181,10 +182,10 @@ const actions = {
     return { submitted: true, score, total: nos.length };
   },
 
-  async checkPin(d) { if (LIVE_REVIEW) { await live("checkPin", { pin: d.pin }); return {}; } checkPin(d.pin); return {}; },
+  async checkPin(d) { if (LIVE_REVIEW) { await live("checkPin", { pin: d.pin, review: true }); return {}; } checkPin(d.pin); return {}; },
   async practicalConfig(d) {
-    if (LIVE_REVIEW) { // real scenarios, only with the real evaluator PIN (checked by the Google backend)
-      const j = await live("practicalConfig", { pin: d.pin });
+    if (LIVE_REVIEW) { // real scenarios, only with the DEMO PIN (checked by the Google backend)
+      const j = await live("practicalConfig", { pin: d.pin, review: true });
       try { sessionStorage.setItem(LIVE_STATIONS_KEY, JSON.stringify(j.stations)); } catch { /* ignore */ }
       return { stations: j.stations };
     }
