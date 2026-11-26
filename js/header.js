@@ -35,4 +35,6 @@ document.body.appendChild(footer);
 hydrateIcons();
 
 // Demo website: leak deterrents on every page (content hidden when the page loses focus, no copy/print, Print Screen warning)
-if (DEMO_SITE) { document.querySelector("main")?.classList.add("protected"); protectPage(); import("./guide.js"); }
+// Screenshot/copy/print deterrents on every page — except Admin, whose QR codes must stay printable.
+if (page !== "admin") { document.querySelector("main")?.classList.add("protected"); protectPage(); }
+if (DEMO_SITE) import("./guide.js");

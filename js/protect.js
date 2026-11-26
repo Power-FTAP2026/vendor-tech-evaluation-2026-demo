@@ -18,8 +18,11 @@ export function protectPage() {
   document.body.appendChild(shield);
 
   const isField = (t) => t && (t.closest?.("input, textarea, select, [contenteditable]"));
-  const hide = () => document.body.classList.add("is-shielded");
+  // (projector mode on the Dashboard is a public screen: never blur it when the operator clicks another window)
+  const hide = () => { if (!document.body.classList.contains("tv")) document.body.classList.add("is-shielded"); };
   const show = () => document.body.classList.remove("is-shielded");
+  // safety: tapping the "Content hidden" box brings the page back if the browser missed the focus event
+  shield.addEventListener("click", () => { if (document.hasFocus()) show(); });
 
   // hide when focus leaves the page (Snipping Tool, app switcher, another window…)
   window.addEventListener("blur", hide);
