@@ -112,7 +112,7 @@
       setStep(1);
       $("instructions").innerHTML = [
         [icon("sheet", 16), "<b>60</b> questions", "50 Technical & Process + 10 Legal & Compliance"],
-        EXAM.timeLimitMinutes ? [icon("clock", 16), `<b>${EXAM.timeLimitMinutes}</b> minutes`, "Auto-submits when time is up"] : null,
+        EXAM.timeLimitMinutes ? [icon("clock", 16), `<b>${EXAM.timeLimitMinutes}</b> minutes`, "Please submit before time is up"] : null,
         [icon("send", 16), "<b>1</b> submission", "You can only submit once"],
       ].filter(Boolean).map(([ic, big, small]) => `<div class="chip">${ic}<span>${big}<small>${small}</small></span></div>`).join("");
       COMPANIES.forEach(c => $("company").insertAdjacentHTML("beforeend", `<option>${esc(c)}</option>`));
@@ -245,12 +245,24 @@
       if (state?.part1?.length && !submitting && !localStorage.getItem(DONE_KEY)) { e.preventDefault(); e.returnValue = ""; }
     });
 
+    let timeUpShown = false;
     function tick() {
       const left = state.startedAt + EXAM.timeLimitMinutes * 60000 - Date.now();
       if (left <= 0) {
-        $("timer").innerHTML = `${icon("clock", 16)} Time is up`;
-        clearInterval(timerHandle);
-        submit(true);
+        // Time is up: keep the exam open (no auto-submit) and count the overtime; late submissions are still received.
+        const over = -left, m = Math.floor(over / 60000), s = Math.floor((over % 60000) / 1000);
+        $("timer").innerHTML = `${icon("clock", 16)} Time is up +${m}:${String(s).padStart(2, "0")}`;
+        $("timer").classList.add("low");
+        if (!timeUpShown && !submitting) {
+          timeUpShown = true;
+          $("msg").innerHTML = `<div class="alert error"><b>Time is up.</b> Please finish and press <b>Submit Exam</b> now.</div>`;
+          // in-page popup (a browser alert() would freeze the page on some phones)
+          document.body.insertAdjacentHTML("beforeend", `<div class="modal" id="timeUpModal" role="alertdialog" aria-modal="true" aria-labelledby="timeUpTitle">
+            <div class="box" style="max-width:380px;text-align:center"><h3 id="timeUpTitle" style="margin:0 0 6px;color:var(--crimson)">${icon("clock", 20)} Time is up</h3>
+            <p style="margin:0 0 14px">Please finish and press <b>Submit Exam</b> now. Your answers are still being kept.</p>
+            <button type="button" class="block" id="timeUpOk" style="margin-top:0">OK</button></div></div>`);
+          $("timeUpOk").onclick = () => $("timeUpModal").remove();
+        }
         return;
       }
       const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);

@@ -56,7 +56,7 @@ export const SESSION = {
 // Theoretical exam. The questions, the 4 sets and the correct answers live in the Google Sheet
 // ("Questions" and "Exam Sets" tabs) — never in this website.
 export const EXAM = {
-  timeLimitMinutes: 60,       // 0 = no time limit. When time is up the exam auto-submits.
+  timeLimitMinutes: 60,       // 0 = no time limit. When time is up the timer counts overtime (no auto-submit); late submissions are still received.
   shuffleQuestionOrder: true, // shuffle the order of the 50 set questions on each device
 };
 
