@@ -89,7 +89,7 @@ const GUIDES = {
       ["#pracCard", "Practical Evaluation", "Same for the practical: ongoing, done (scored at all stations) and later session."],
       ["#coGrid", "By company", "Progress of each company."],
       ["#participantsCard", "Participants", "Everyone registered and their status. Search or filter the list."],
-      ["#fsBtn", "Full screen", "Shows the page full screen on a TV or projector."],
+      ["#fsBtn", "Full screen", "Shows the page full screen on a TV or projector. The participant list then scrolls by itself, like the Dashboard projector mode."],
     ],
   }],
   admin: [{

@@ -101,10 +101,28 @@
     .mon-people .people-table th { background: var(--surface-2); }
     .mon-foot { margin-top: 18px; text-align: center; color: var(--muted); font-size: .8rem; }
 
-    /* full screen: a bit bigger for a TV */
-    body.monitor:fullscreen, body.monitor.fs { overflow: auto; }
-    body.fs .mon { max-width: none; padding: 22px 34px; }
-    body.fs header.top, body.fs .site-footer { display: none; }
+    /* full screen (TV / projector): compact, everything on one screen, participant list scrolls by itself */
+    body.fs .mon { max-width: none; padding: 14px 26px 10px; }
+    body.fs header.top, body.fs .site-footer, body.fs #msg, body.fs .mon-people .filters, body.fs .mon-foot { display: none !important; }
+    body.fs .mon-hero { padding: 16px 26px; border-radius: 16px; }
+    body.fs .mon-title { font-size: 2rem; margin: 6px 0 6px; }
+    body.fs .mon-clock { font-size: 2.6rem; }
+    body.fs .mon-grid { margin-top: 12px; gap: 12px; }
+    body.fs .mon-card { padding: 14px 18px; }
+    body.fs .ring { width: 112px; height: 112px; }
+    body.fs .trk-nums { margin: 10px 0 10px; }
+    body.fs .trk-num { padding: 8px 12px; }
+    body.fs .trk-num .val { font-size: 2.2rem; }
+    body.fs .mon-sec { margin: 12px 2px 8px; }
+    body.fs .co-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    body.fs .co-card { padding: 10px 14px; }
+    body.fs .co-top { margin-bottom: 4px; }
+    body.fs .co-row { margin-top: 6px; }
+    body.fs .mon-people { margin-top: 12px; padding-bottom: 12px; }
+    body.fs .mon-people .trk-head { margin-bottom: 10px; }
+    body.fs #peopleWrap { overflow-y: hidden; min-height: 240px; }
+    body.fs #peopleWrap th { position: sticky; top: 0; z-index: 1; }
+    body.fs .people-table { font-size: 1.05rem; }
   </style>
 </head>
 <body class="monitor">
@@ -299,6 +317,7 @@
         <td class="st" data-label="Practical">${pill(r.prac, r.prac === "Ongoing" ? ` · ${r.stationsDone}/${nSt}` : "")}</td></tr>`).join("");
       $("empty").classList.toggle("hidden", shown.length > 0);
       $("count").textContent = shown.length === rows.length ? `${rows.length} total` : `${shown.length} of ${rows.length}`;
+      requestAnimationFrame(() => fitList()); // full screen: the list fills what's left of the screen
     }
 
     function renderCompanies(rows) {
@@ -317,11 +336,42 @@
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
       else document.documentElement.requestFullscreen?.().catch(() => {});
     };
-    document.addEventListener("fullscreenchange", () => {
-      const on = !!document.fullscreenElement;
+    // In full screen the participant list fills the rest of the screen and scrolls slowly by itself
+    // (like the Dashboard's projector mode): down to the end, pause, back to the top, pause, again.
+    // Small screens (e.g. a 1366×768 projector) don't leave room for the list → the whole page scrolls instead.
+    let scrollTimer = null, scroller = null;
+    function fitList() {
+      const w = $("peopleWrap");
+      if (!document.body.classList.contains("fs")) { w.style.maxHeight = ""; scroller = null; return; }
+      const top = w.getBoundingClientRect().top + scrollY, room = innerHeight - top - 26;
+      if (room >= 260) { w.style.maxHeight = room + "px"; w.style.overflowY = "hidden"; scroller = w; }
+      else { w.style.maxHeight = "none"; w.style.overflowY = "visible"; scroller = document.scrollingElement; }
+    }
+    function setFs(on) {
       document.body.classList.toggle("fs", on);
       $("fsBtn").innerHTML = on ? `${icon("x", 15)} Exit full screen` : `${icon("tv", 15)} Full screen`;
-    });
+      clearInterval(scrollTimer); scrollTimer = null;
+      const w = $("peopleWrap");
+      if (on) {
+        $("fSearch").value = ""; ["fCompany", "fRegion", "fArea", "fRole"].forEach(id => $(id).value = ""); render(); // whole list
+        scrollTo(0, 0); w.scrollTop = 0;
+        fitList(); requestAnimationFrame(fitList);
+        // pause at the top (longer when the whole page scrolls, so the totals are seen), scroll down, pause at the end, back to top
+        const topPause = () => scroller === w ? 60 : 160;     // 3 s / 8 s
+        let pause = topPause();
+        scrollTimer = setInterval(() => {
+          const s = scroller; if (!s) return;
+          const atEnd = s.scrollTop + s.clientHeight >= s.scrollHeight - 2;
+          if (pause > 0) { pause--; if (!pause && s.scrollTop > 0 && atEnd) { s.scrollTop = 0; pause = topPause(); } return; }
+          if (atEnd) { pause = 60; return; }                   // 3 s at the end, then back to the top
+          s.scrollTop += 1;
+        }, 50);
+      } else { w.style.maxHeight = ""; w.style.overflowY = ""; w.scrollTop = 0; scroller = null; }
+    }
+    document.addEventListener("fullscreenchange", () => setFs(!!document.fullscreenElement));
+    addEventListener("resize", fitList);
+    // monitor.html?tv → the TV view right away (for a TV's browser; press the button for real full screen)
+    if (new URLSearchParams(location.search).has("tv")) setTimeout(() => setFs(true), 300);
 
     render();
   </script>
