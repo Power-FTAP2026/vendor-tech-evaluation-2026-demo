@@ -302,7 +302,7 @@
       const segs = segments();
       $("stSegs").innerHTML = segs.map((label, k) => `
         <div class="st-seg" data-k="${k}">
-          <div class="st-seg-main"><span class="st-timer-label">${esc(label || "Station timer")} · ${PRACTICAL.minutesPerStation}-min limit</span>
+          <div class="st-seg-main"><span class="st-timer-label">${esc(label || "Station timer")}</span>
             <span class="st-timer-clock"></span></div>
           <div class="st-btns">
             <button type="button" class="small st-start" data-k="${k}"></button>
@@ -336,7 +336,7 @@
       const b = e.target.closest("button"); if (!b) return;
       const k = Number(b.dataset.k), label = segments()[k] || "the station";
       if (b.classList.contains("st-start")) {
-        if (getT(k, "stop") && !confirm(`Start the ${PRACTICAL.minutesPerStation} minutes for ${label} again? The last start and stop times will be replaced.`)) return;
+        if (getT(k, "stop") && !confirm(`Start the timer for ${label} again? The last start and stop times will be replaced.`)) return;
         segments().forEach((_, j) => { if (j !== k && running(j)) setT(j, "stop", Date.now()); }); // one part runs at a time
         setT(k, "start", Date.now()); setT(k, "stop", 0); alerted[k] = false;
       } else if (b.classList.contains("st-stop")) {
