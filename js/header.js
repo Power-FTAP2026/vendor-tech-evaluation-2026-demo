@@ -7,6 +7,7 @@ const el = document.querySelector("header.top");
 const page = el.dataset.page || "";
 const links = [
   ["home", "index.html", "Dashboard", "grid"],
+  ["monitor", "monitor.html", "Monitoring", "eye"],
   ["register", "register.html", "Registration", "user"],
   ["exam", "exam.html", "Theoretical", "pen"],
   ["practical", "practical.html", "Practical", "wrench"],
@@ -14,10 +15,12 @@ const links = [
   ["admin", "admin.html", "Admin", "settings"],
 ];
 // Participants' pages (register/exam/feedback) only show the brand, so nobody wanders off mid-exam.
-const showNav = !["register", "exam", "feedback"].includes(page);
+// Live Monitoring (management view) is a one-way door: no menu and no link back out, on the demo too.
+const showNav = !["register", "exam", "feedback", "monitor"].includes(page);
+const logoLink = page !== "monitor" && (showNav || DEMO_SITE);
 el.innerHTML = `
   <div class="inner">
-    <a class="brand" href="${showNav || DEMO_SITE ? "index.html" : "#"}" ${showNav || DEMO_SITE ? 'title="Back to Dashboard"' : 'onclick="return false"'}>
+    <a class="brand" href="${logoLink ? "index.html" : "#"}" ${logoLink ? 'title="Back to Dashboard"' : 'onclick="return false" tabindex="-1" style="cursor:default"'}>
       <img src="assets/logo.jpg" alt="${EVENT.org}" width="140" height="47" />
       <span class="divider"></span>
       <span class="brand-text"><span class="app-name">${EVENT.title}${DEMO_SITE ? ` <span class="demo-pill">DEMO</span>` : ""}</span>${el.dataset.sub ? `<span class="page-name">${el.dataset.sub}</span>` : ""}</span>

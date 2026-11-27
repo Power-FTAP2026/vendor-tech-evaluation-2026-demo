@@ -7,7 +7,7 @@ const GUIDES = {
   home: [{
     key: "home", when: "#kAtt", steps: [
       [null, "Welcome to the DEMO website", "This is a safe place to practice. Nothing you do here is saved to the real evaluation. This short guide shows what each part is for."],
-      ["header.top nav", "Pages", "Use these tabs to move between Dashboard, Registration, Theoretical, Practical and Admin. Click the FTAP logo anytime to come back to this Dashboard."],
+      ["header.top nav", "Pages", "Use these tabs to move between Dashboard, Monitoring, Registration, Theoretical, Practical and Admin. Click the FTAP logo anytime to come back to this Dashboard. Note: Monitoring is a view for management and has no way back out (open it in a new tab if you want to keep the Dashboard)."],
       ["#session", "Session and time", "Shows whether it is the Morning (AM) or Afternoon (PM) session, with the current time."],
       [".kpis", "Live counts", "How many technicians registered, and how many are taking or have finished the Theoretical exam and the Practical evaluation. Updates by itself."],
       ["#tvBtn", "Projector mode", "Click for a big-screen view to show on the venue's projector or TV."],
@@ -79,6 +79,17 @@ const GUIDES = {
       ["#ratings", "Ratings", "Rate each part of the day from 1 (Poor) to 5 (Excellent). Every rating is required."],
       ["#wentWell", "Comments", "Optional: what went well and what can be improved."],
       ["#sendBtn", "Send", "Sends the feedback. On the demo website nothing is saved."],
+    ],
+  }],
+  monitor: [{
+    key: "monitor", when: "#ring", steps: [
+      [null, "Live Monitoring", "A clean view of the evaluation for management. It shows the same live numbers as the Dashboard and updates by itself. There is no menu here: once opened, this page stays on Live Monitoring."],
+      [".mon-overall", "Overall progress", "Attendance, and how much of the evaluation is complete (theoretical exams and practical evaluations together)."],
+      ["#theoCard", "Theoretical Exam", "Ongoing and done, with the same counts as the Dashboard. The bar shows done, ongoing and later session."],
+      ["#pracCard", "Practical Evaluation", "Same for the practical: ongoing, done (scored at all stations) and later session."],
+      ["#coGrid", "By company", "Progress of each company."],
+      ["#participantsCard", "Participants", "Everyone registered and their status. Search or filter the list."],
+      ["#fsBtn", "Full screen", "Shows the page full screen on a TV or projector."],
     ],
   }],
   admin: [{

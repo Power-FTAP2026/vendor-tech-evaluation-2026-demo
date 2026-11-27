@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#7d1020" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Live Monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ---------- Live Monitoring (management view) ---------- */
+    body.monitor { background: #f4f1ee; }
+    .mon { max-width: 1320px; margin: 0 auto; padding: 18px 22px 40px; }
+    @media (max-width: 620px) { .mon { padding: 12px 16px 32px; } }
+
+    /* hero band */
+    .mon-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; gap: 18px 28px; align-items: end;
+      padding: 26px 30px; border-radius: 20px; color: #fff;
+      background: radial-gradient(120% 140% at 100% 0%, #e5582a 0%, rgba(229,88,42,0) 45%), linear-gradient(135deg, #8e1324 0%, #b71c2e 55%, #6f0f1d 100%);
+      box-shadow: 0 18px 40px -18px rgba(111, 15, 29, .55); }
+    .mon-hero::after { content: ""; position: absolute; right: -60px; bottom: -90px; width: 320px; height: 320px; border-radius: 50%;
+      border: 46px solid rgba(255,255,255,.06); pointer-events: none; }
+    .mon-kicker { display: inline-flex; align-items: center; gap: 10px; font-size: .78rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; opacity: .95; }
+    .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #5ef0a0; box-shadow: 0 0 0 0 rgba(94,240,160,.7); animation: livePulse 1.8s infinite; }
+    .live-dot.stale { background: #ffd27a; animation: none; }
+    @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(94,240,160,.7); } 70% { box-shadow: 0 0 0 10px rgba(94,240,160,0); } 100% { box-shadow: 0 0 0 0 rgba(94,240,160,0); } }
+    .mon-title { font-family: var(--head); font-weight: 500; font-size: clamp(1.6rem, 3.4vw, 2.6rem); line-height: 1.1; margin: 10px 0 8px; letter-spacing: -.01em; }
+    .mon-event { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mon-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.22); font-size: .85rem; font-weight: 500; }
+    .mon-side { text-align: right; position: relative; z-index: 1; }
+    .mon-clock { font-family: var(--head); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+    .mon-date { opacity: .85; margin-top: 6px; font-size: .92rem; }
+    .mon-updated { margin-top: 10px; font-size: .8rem; opacity: .85; display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .mon-fs { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.3); box-shadow: none; min-height: 34px; padding: 6px 12px; font-size: .82rem; }
+    .mon-fs:hover { background: rgba(255,255,255,.24); color: #fff; }
+    @media (max-width: 760px) { .mon-hero { grid-template-columns: 1fr; padding: 22px 20px; } .mon-side { text-align: left; } .mon-updated { justify-content: flex-start; } }
+
+    /* overview */
+    .mon-grid { display: grid; grid-template-columns: 320px 1fr 1fr; gap: 16px; margin-top: 16px; }
+    @media (max-width: 1080px) { .mon-grid { grid-template-columns: 1fr 1fr; } .mon-overall { grid-column: 1 / -1; } }
+    @media (max-width: 680px) { .mon-grid { grid-template-columns: 1fr; } }
+    .mon-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; box-shadow: var(--sh-2); min-width: 0; }
+    .mon-card h2 { font-family: var(--head); font-weight: 500; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+    .mon-card .mon-ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--crimson-50); color: var(--crimson); flex: none; }
+    .mon-eyebrow { color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+    .mon-overall { display: flex; align-items: center; gap: 20px; }
+    .ring { position: relative; width: 132px; height: 132px; flex: none; }
+    .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring .track { stroke: var(--line); }
+    .ring .fill { stroke: var(--ok); stroke-linecap: round; transition: stroke-dashoffset .8s ease; }
+    .ring .pct { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+    .ring .pct b { font-family: var(--head); font-weight: 500; font-size: 2rem; line-height: 1; color: var(--ink); }
+    .ring .pct span { display: block; font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .mon-att { font-family: var(--head); font-size: 3rem; font-weight: 500; line-height: 1; color: var(--ink); margin: 6px 0 2px; }
+    .mon-att-sub { color: var(--muted); font-size: .9rem; }
+    .mon-mini { display: flex; gap: 14px; margin-top: 12px; font-size: .85rem; color: var(--ink-2); flex-wrap: wrap; }
+    .mon-mini b { font-weight: 700; color: var(--ink); }
+
+    /* track cards (Theoretical / Practical) */
+    .trk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .trk-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 14px; }
+    .trk-num { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+    .trk-num .lab { display: flex; align-items: center; gap: 7px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    .trk-num .val { font-family: var(--head); font-size: 2.4rem; font-weight: 500; line-height: 1.05; margin-top: 4px; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .trk-num .sub { font-size: .8rem; color: var(--muted); }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+    .sw-done { background: var(--ok); } .sw-on { background: var(--orange); } .sw-later { background: #d9d1c9; }
+    .stack { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--line); gap: 2px; }
+    .stack > div { height: 100%; transition: width .8s ease; min-width: 0; }
+    .stack .s-done { background: var(--ok); } .stack .s-on { background: var(--orange); } .stack .s-later { background: #d9d1c9; }
+    .stack-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: .8rem; color: var(--ink-2); }
+    .stack-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .trk-pct { font-family: var(--head); font-size: 1.05rem; color: var(--ok); font-weight: 600; white-space: nowrap; }
+
+    /* by company */
+    .mon-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 26px 2px 12px; flex-wrap: wrap; }
+    .mon-sec h2 { font-family: var(--head); font-weight: 500; font-size: 1.35rem; margin: 0; }
+    .co-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+    .co-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--sh-1); }
+    .co-card.all { background: linear-gradient(180deg, #fff, var(--surface-2)); border-color: var(--line-strong); }
+    .co-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+    .co-name { font-weight: 700; font-size: 1rem; }
+    .co-reg { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+    .co-reg b { font-family: var(--head); font-size: 1.3rem; color: var(--ink); font-weight: 500; }
+    .co-row { margin-top: 10px; }
+    .co-row .lbl { display: flex; justify-content: space-between; font-size: .8rem; color: var(--ink-2); margin-bottom: 5px; }
+    .co-row .lbl b { color: var(--ink); }
+    .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+    .bar > div { height: 100%; border-radius: 4px; background: var(--ok); transition: width .8s ease; }
+
+    /* participants */
+    .mon-people { margin-top: 16px; }
+    .mon-people .filters { margin: 14px 0 12px; }
+    .mon-people .people-table th { background: var(--surface-2); }
+    .mon-foot { margin-top: 18px; text-align: center; color: var(--muted); font-size: .8rem; }
+
+    /* full screen: a bit bigger for a TV */
+    body.monitor:fullscreen, body.monitor.fs { overflow: auto; }
+    body.fs .mon { max-width: none; padding: 22px 34px; }
+    body.fs header.top, body.fs .site-footer { display: none; }
+  </style>
+</head>
+<body class="monitor">
+  <header class="top" data-page="monitor" data-sub="Live Monitoring"></header>
+  <main class="mon">
+    <div id="msg"></div>
+
+    <section class="mon-hero" aria-label="Live Monitoring">
+      <div style="position:relative;z-index:1">
+        <div class="mon-kicker"><span class="live-dot" id="liveDot"></span> Live Monitoring</div>
+        <h1 class="mon-title">Vendors' Technicians Evaluation 2026</h1>
+        <div class="mon-event">
+          <span class="mon-chip" id="evName"></span>
+          <span class="mon-chip" id="evDays"></span>
+          <span class="mon-chip" id="sessionChip"></span>
+        </div>
+      </div>
+      <div class="mon-side">
+        <div class="mon-clock" id="clock">--:--</div>
+        <div class="mon-date" id="date"></div>
+        <div class="mon-updated"><span id="updated">Connecting…</span>
+          <button type="button" class="mon-fs" id="fsBtn" title="Full screen (for a TV or projector)"><i data-icon="tv" data-size="15"></i> Full screen</button></div>
+      </div>
+    </section>
+
+    <section class="mon-grid">
+      <div class="mon-card mon-overall">
+        <div class="ring" id="ring" role="img" aria-label="Overall progress">
+          <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="12" />
+            <circle class="fill" id="ringFill" cx="60" cy="60" r="52" fill="none" stroke-width="12" stroke-dasharray="326.73" stroke-dashoffset="326.73" /></svg>
+          <div class="pct"><div><b id="ringPct">0%</b><span>completed</span></div></div>
+        </div>
+        <div>
+          <div class="mon-eyebrow">Attendance</div>
+          <div class="mon-att" id="kAtt">–</div>
+          <div class="mon-att-sub">registered participants</div>
+          <div class="mon-mini"><span>Fully done <b id="kBoth">–</b></span><span>Companies <b id="kCos">–</b></span></div>
+        </div>
+      </div>
+
+      <div class="mon-card" id="theoCard">
+        <div class="trk-head"><h2><span class="mon-ic"><i data-icon="pen" data-size="18"></i></span> Theoretical Exam</h2><span class="trk-pct" id="tPct"></span></div>
+        <div class="trk-nums">
+          <div class="trk-num"><div class="lab"><span class="swatch sw-on"></span> Ongoing</div><div class="val" id="kTheoOn">–</div><div class="sub" id="kTheoOnSub"></div></div>
+          <div class="trk-num"><div class="lab"><span class="swatch sw-done"></span> Done</div><div class="val" id="kTheoDone">–</div><div class="sub" id="kTheoDoneSub"></div></div>
+        </div>
+        <div class="stack" id="tStack"></div>
+        <div class="stack-legend"><span><span class="swatch sw-done"></span>Done</span><span><span class="swatch sw-on"></span>Ongoing</span><span><span class="swatch sw-later"></span>Later session</span></div>
+      </div>
+
+      <div class="mon-card" id="pracCard">
+        <div class="trk-head"><h2><span class="mon-ic"><i data-icon="wrench" data-size="18"></i></span> Practical Evaluation</h2><span class="trk-pct" id="pPct"></span></div>
+        <div class="trk-nums">
+          <div class="trk-num"><div class="lab"><span class="swatch sw-on"></span> Ongoing</div><div class="val" id="kPracOn">–</div><div class="sub" id="kPracOnSub"></div></div>
+          <div class="trk-num"><div class="lab"><span class="swatch sw-done"></span> Done</div><div class="val" id="kPracDone">–</div><div class="sub" id="kPracDoneSub"></div></div>
+        </div>
+        <div class="stack" id="pStack"></div>
+        <div class="stack-legend"><span><span class="swatch sw-done"></span>Done</span><span><span class="swatch sw-on"></span>Ongoing</span><span><span class="swatch sw-later"></span>Later session</span></div>
+      </div>
+    </section>
+
+    <div class="mon-sec"><h2>By Company</h2><span class="muted">Done = submitted theoretical · scored at all practical stations</span></div>
+    <section class="co-grid" id="coGrid"></section>
+
+    <section class="mon-card mon-people" id="participantsCard">
+      <div class="trk-head"><h2><span class="mon-ic"><i data-icon="users" data-size="18"></i></span> Participants</h2><span class="muted" id="count"></span></div>
+      <div class="filters">
+        <div class="search-field"><i data-icon="search"></i><input id="fSearch" type="search" placeholder="Search name…" aria-label="Search name" /></div>
+        <select id="fCompany" aria-label="Company"><option value="">All companies</option></select>
+        <select id="fRegion" aria-label="Region"><option value="">All regions</option></select>
+        <select id="fArea" aria-label="Area"><option value="">All areas</option></select>
+        <select id="fRole" aria-label="Role"><option value="">All roles</option></select>
+      </div>
+      <div class="table-wrap" id="peopleWrap">
+        <table class="people-table">
+          <thead><tr><th>#</th><th>Company</th><th>Name</th><th>Role</th><th>Region</th><th>Area</th><th>Theoretical Evaluation</th><th>Practical Evaluation</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="empty">No participants registered yet.</p>
+    </section>
+    <p class="mon-foot">Updates automatically every 15 seconds.</p>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { api, errorText, showDemoBanner } from "./js/api.js";
+    import { COMPANIES, REGIONS, ROLES, AREAS, todaysEvent } from "./js/config.js";
+    import { buildBoard, currentSession, esc, pill } from "./js/people.js";
+    import { icon } from "./js/icons.js";
+
+    const $ = (id) => document.getElementById(id);
+    showDemoBanner($("msg"));
+
+    // ---------- this page can't be left: no menu, logo isn't a link, and Back stays here ----------
+    history.pushState({ monitor: true }, "", location.href);
+    addEventListener("popstate", () => history.pushState({ monitor: true }, "", location.href));
+
+    const ev = todaysEvent();
+    const fmt = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-PH", { month: "long", day: "numeric" });
+    $("evName").innerHTML = `${icon("building", 14)} ${esc(ev.name)}`;
+    $("evDays").innerHTML = `${icon("calendar", 14)} ${esc(ev.days.map(fmt).join(" & "))}, ${ev.days[0].slice(0, 4)}`;
+
+    const fill = (sel, items) => items.forEach(v => sel.insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`));
+    fill($("fCompany"), COMPANIES); fill($("fRegion"), REGIONS); fill($("fArea"), Object.keys(AREAS)); fill($("fRole"), ROLES);
+    $("fRole").insertAdjacentHTML("beforeend", `<option value="__other">Other roles</option>`);
+
+    let board = null, lastOk = 0;
+    const REFRESH_MS = 15000;
+    async function load() {
+      try {
+        board = await api("board", {}, { retries: 2 });
+        lastOk = Date.now();
+        $("msg").querySelector(".alert.error")?.remove();
+        render();
+      } catch (e) {
+        if (!$("msg").querySelector(".alert.error"))
+          $("msg").insertAdjacentHTML("beforeend", `<div class="alert error">${esc(errorText(e))}</div>`);
+      }
+      showUpdated();
+    }
+    function showUpdated() {
+      const stale = !lastOk || Date.now() - lastOk > REFRESH_MS * 3;
+      $("liveDot").classList.toggle("stale", stale);
+      $("updated").textContent = lastOk ? `Updated ${new Date(lastOk).toLocaleTimeString("en-PH")}` + (stale ? " · reconnecting…" : "") : "Connecting…";
+    }
+    load();
+    setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+    ["fSearch", "fCompany", "fRegion", "fArea", "fRole"].forEach(id => $(id).addEventListener("input", render));
+
+    let lastSession = currentSession();
+    function tickClock() {
+      const now = new Date();
+      $("clock").textContent = now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+      $("date").textContent = now.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      if (currentSession() !== lastSession) { lastSession = currentSession(); render(); }
+      showUpdated();
+    }
+    tickClock(); setInterval(tickClock, 1000);
+
+    const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+    function stack(el, done, on, total, label) {
+      const later = Math.max(0, total - done - on);
+      const w = (n) => total ? (n / total * 100) + "%" : "0%";
+      el.innerHTML = `<div class="s-done" style="width:${w(done)}" title="${label} · Done: ${done}"></div>` +
+        `<div class="s-on" style="width:${w(on)}" title="${label} · Ongoing: ${on}"></div>` +
+        `<div class="s-later" style="width:${w(later)}" title="${label} · Later session: ${later}"></div>`;
+      el.setAttribute("role", "img");
+      el.setAttribute("aria-label", `${label}: ${done} done, ${on} ongoing, ${later} later session, of ${total}`);
+    }
+
+    function render() {
+      const session = currentSession();
+      $("sessionChip").innerHTML = `${icon(session === "AM" ? "sun" : "sunset", 14)} ${session === "AM" ? "Morning Session" : "Afternoon Session"}`;
+      if (!board) return;
+      const { rows, kpi } = buildBoard(board, session);
+      const nSt = board.stationsTotal || 0, att = kpi.attendance;
+      // same numbers and wording as the Dashboard
+      const onSub = (sched, extra, size) => !extra ? `of ${size} scheduled this session`
+        : `${sched} ${session} batch + ${extra} ${session === "PM" ? "pending from AM" : "started early"}`;
+      $("kAtt").textContent = att;
+      $("kTheoOn").textContent = kpi.theoOngoing; $("kTheoOnSub").textContent = onSub(kpi.theoSched, kpi.theoExtra, kpi.theoAssigned);
+      $("kTheoDone").textContent = kpi.theoDone;  $("kTheoDoneSub").textContent = `of ${att} submitted`;
+      $("kPracOn").textContent = kpi.pracOngoing; $("kPracOnSub").textContent = onSub(kpi.pracSched, kpi.pracExtra, kpi.pracAssigned);
+      $("kPracDone").textContent = kpi.pracDone;  $("kPracDoneSub").textContent = `of ${att} · all ${nSt} stations`;
+      $("tPct").textContent = `${pct(kpi.theoDone, att)}% done`;
+      $("pPct").textContent = `${pct(kpi.pracDone, att)}% done`;
+      stack($("tStack"), kpi.theoDone, kpi.theoOngoing, att, "Theoretical Exam");
+      stack($("pStack"), kpi.pracDone, kpi.pracOngoing, att, "Practical Evaluation");
+
+      // overall = theoretical + practical evaluations completed, out of 2 per participant
+      const overall = pct(kpi.theoDone + kpi.pracDone, att * 2);
+      $("ringPct").textContent = overall + "%";
+      $("ringFill").style.strokeDashoffset = String(326.73 * (1 - overall / 100));
+      $("ring").setAttribute("aria-label", `Overall progress ${overall}% (theoretical and practical evaluations completed)`);
+      $("kBoth").textContent = rows.filter(r => r.theo === "Done" && r.prac === "Done").length;
+      $("kCos").textContent = new Set(rows.map(r => r.company).filter(Boolean)).size;
+
+      renderCompanies(rows);
+
+      const q = $("fSearch").value.trim().toLowerCase();
+      const f = { company: $("fCompany").value, region: $("fRegion").value, area: $("fArea").value, role: $("fRole").value };
+      const shown = rows
+        .filter(r => (!q || r.name.toLowerCase().includes(q)) && (!f.company || r.company === f.company)
+          && (!f.region || r.region === f.region) && (!f.area || r.area === f.area) && (!f.role || (f.role === "__other" ? !ROLES.includes(r.role) : r.role === f.role)))
+        .sort((a, b) => a.company.localeCompare(b.company) || a.name.localeCompare(b.name));
+      $("rows").innerHTML = shown.map((r, i) => `<tr>
+        <td class="muted idx">${i + 1}</td><td class="meta m1">${esc(r.company)}</td><td class="name">${esc(r.name)}</td>
+        <td class="meta">${esc(r.role)}</td><td class="meta">${esc(r.region)}</td><td class="meta area">${r.area ? esc(r.area) : `<span class="muted">—</span>`}</td>
+        <td class="st" data-label="Theoretical">${pill(r.theo)}</td>
+        <td class="st" data-label="Practical">${pill(r.prac, r.prac === "Ongoing" ? ` · ${r.stationsDone}/${nSt}` : "")}</td></tr>`).join("");
+      $("empty").classList.toggle("hidden", shown.length > 0);
+      $("count").textContent = shown.length === rows.length ? `${rows.length} total` : `${shown.length} of ${rows.length}`;
+    }
+
+    function renderCompanies(rows) {
+      const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
+      const meter = (label, done, of) => `<div class="co-row"><div class="lbl"><span>${label}</span><span><b>${done}</b> / ${of}</span></div>
+        <div class="bar" title="${esc(label)}: ${done} of ${of} (${pct(done, of)}%)"><div style="width:${pct(done, of)}%"></div></div></div>`;
+      const card = (name, list, cls = "") => `<div class="co-card ${cls}">
+        <div class="co-top"><span class="co-name">${esc(name)}</span><span class="co-reg"><b>${list.length}</b> registered</span></div>
+        ${meter("Theoretical done", list.filter(r => r.theo === "Done").length, list.length)}
+        ${meter("Practical done", list.filter(r => r.prac === "Done").length, list.length)}</div>`;
+      $("coGrid").innerHTML = companies.map(c => card(c, rows.filter(r => r.company === c))).join("") + card("All companies", rows, "all");
+    }
+
+    // ---------- full screen (TV / projector) ----------
+    $("fsBtn").onclick = () => {
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+      else document.documentElement.requestFullscreen?.().catch(() => {});
+    };
+    document.addEventListener("fullscreenchange", () => {
+      const on = !!document.fullscreenElement;
+      document.body.classList.toggle("fs", on);
+      $("fsBtn").innerHTML = on ? `${icon("x", 15)} Exit full screen` : `${icon("tv", 15)} Full screen`;
+    });
+
+    render();
+  </script>
+</body>
+</html>
