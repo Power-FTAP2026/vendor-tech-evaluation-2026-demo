@@ -121,28 +121,64 @@
     .mon-foot { margin-top: 18px; text-align: center; color: var(--muted); font-size: .8rem; }
 
     /* full screen (TV / projector): compact, everything on one screen, participant list scrolls by itself */
-    body.fs .mon { max-width: none; padding: 14px 26px 10px; }
-    body.fs header.top, body.fs .site-footer, body.fs #msg, body.fs .mon-people .filters, body.fs .mon-foot { display: none !important; }
-    body.fs .mon-hero { padding: 16px 26px; border-radius: 16px; }
-    body.fs .mon-title { font-size: 2rem; margin: 6px 0 6px; }
-    body.fs .mon-clock { font-size: 2.6rem; }
-    body.fs .mon-grid { margin-top: 12px; gap: 12px; }
-    body.fs .mon-card { padding: 14px 18px; }
-    body.fs .ring { width: 104px; height: 104px; } body.fs .ring.small { width: 92px; height: 92px; }
-    body.fs .mon-overall { gap: 10px; } body.fs .days { padding-top: 8px; gap: 6px; }
-    body.fs .trk-nums { margin: 10px 0 10px; }
-    body.fs .trk-num { padding: 8px 12px; }
-    body.fs .trk-num .val { font-size: 2.2rem; }
-    body.fs .mon-sec { margin: 12px 2px 8px; }
-    body.fs .co-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-    body.fs .co-card { padding: 10px 14px; }
-    body.fs .co-top { margin-bottom: 4px; }
-    body.fs .co-row { margin-top: 6px; }
-    body.fs .mon-people { margin-top: 12px; padding-bottom: 12px; }
-    body.fs .mon-people .trk-head { margin-bottom: 10px; }
-    body.fs #peopleWrap { overflow-y: hidden; min-height: 240px; }
+    body.fs .mon { max-width: none; padding: 10px 22px 8px; }
+    body.fs header.top, body.fs .site-footer, body.fs #msg, body.fs .mon-people .filters, body.fs .mon-foot, body.fs .mon-sec .muted { display: none !important; }
+    /* header band: one slim row */
+    body.fs .mon-hero { padding: 10px 22px; border-radius: 14px; align-items: center; }
+    body.fs .mon-hero::after { display: none; }
+    body.fs .mon-kicker { font-size: .7rem; }
+    body.fs .mon-title { font-size: 1.55rem; margin: 2px 0 6px; }
+    body.fs .mon-chip { padding: 3px 10px; font-size: .78rem; }
+    body.fs .mon-clock { font-size: 2.1rem; }
+    body.fs .mon-date { margin-top: 2px; font-size: .82rem; }
+    body.fs .mon-updated { margin-top: 4px; }
+    body.fs .mon-fs { min-height: 28px; padding: 3px 10px; }
+    /* overview row */
+    body.fs .mon-grid { margin-top: 10px; gap: 10px; grid-template-columns: 420px 1fr 1fr; }
+    body.fs .mon-card { padding: 10px 16px; border-radius: 14px; }
+    body.fs .mon-overall { gap: 6px; }
+    body.fs .rings { grid-template-columns: 1fr 1fr; gap: 8px; }
+    body.fs .ring-block { display: grid; grid-template-columns: auto minmax(0, 1fr); overflow: hidden; grid-template-rows: auto auto; column-gap: 10px; row-gap: 2px;
+      align-items: center; text-align: left; justify-items: start; }
+    body.fs .ring-block > div:first-child { grid-column: 2; grid-row: 1; align-self: end; min-width: 0; max-width: 100%; }
+    body.fs .ring-block .ring { grid-column: 1; grid-row: 1 / span 2; }
+    body.fs .ring-block .ring-cap { grid-column: 2; grid-row: 2; align-self: start; font-size: .76rem; }
+    body.fs .ring, body.fs .ring.small { width: 76px; height: 76px; }
+    body.fs .ring .pct b, body.fs .ring.small .pct b { font-size: 1.2rem; }
+    body.fs .ring .pct span { display: none; }
+    body.fs .ring-sub { font-size: .7rem; }
+    body.fs .days { padding-top: 6px; gap: 3px; }
+    body.fs .day-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; align-items: center; gap: 8px; }
+    body.fs .day-top { display: contents; }
+    body.fs .day-lab { font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    body.fs .day-num { order: 3; font-size: .74rem; }
+    body.fs .day-row .bar { order: 2; height: 6px; }
+    body.fs .mon-card h2 { font-size: 1rem; }
+    body.fs .mon-card .mon-ic { width: 28px; height: 28px; }
+    body.fs .trk-nums { margin: 6px 0 8px; gap: 8px; }
+    body.fs .trk-num { padding: 6px 10px; border-radius: 10px; }
+    body.fs .trk-num .val { font-size: 1.8rem; margin-top: 0; }
+    body.fs .trk-num .sub { font-size: .72rem; }
+    body.fs .stack { height: 10px; }
+    body.fs .stack-legend { margin-top: 6px; font-size: .74rem; }
+    /* companies: one compact row */
+    body.fs .mon-sec { margin: 8px 2px 6px; }
+    body.fs .mon-sec h2 { font-size: 1rem; }
+    body.fs .co-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    body.fs .co-card { padding: 7px 12px; border-radius: 12px; }
+    body.fs .co-top { margin-bottom: 0; }
+    body.fs .co-name { font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    body.fs .co-reg { font-size: .72rem; } body.fs .co-reg b { font-size: 1rem; }
+    body.fs .co-row { margin-top: 3px; }
+    body.fs .co-row .lbl { font-size: .72rem; margin-bottom: 2px; }
+    body.fs .bar { height: 6px; }
+    /* participants fill the rest of the screen */
+    body.fs .mon-people { margin-top: 10px; padding-bottom: 8px; }
+    body.fs .mon-people .trk-head { margin-bottom: 6px; }
+    body.fs #peopleWrap { overflow-y: hidden; min-height: 180px; }
     body.fs #peopleWrap th { position: sticky; top: 0; z-index: 1; }
-    body.fs .people-table { font-size: 1.05rem; }
+    body.fs .people-table { font-size: 1rem; }
+    body.fs .people-table td, body.fs .people-table th { padding-top: 7px; padding-bottom: 7px; }
   </style>
 </head>
 <body class="monitor">
@@ -423,7 +459,7 @@
       const w = $("peopleWrap");
       if (!document.body.classList.contains("fs")) { w.style.maxHeight = ""; scroller = null; return; }
       const top = w.getBoundingClientRect().top + scrollY, room = innerHeight - top - 26;
-      if (room >= 260) { w.style.maxHeight = room + "px"; w.style.overflowY = "hidden"; scroller = w; }
+      if (room >= 180) { w.style.maxHeight = room + "px"; w.style.overflowY = "hidden"; scroller = w; }
       else { w.style.maxHeight = "none"; w.style.overflowY = "visible"; scroller = document.scrollingElement; }
     }
     function setFs(on) {
