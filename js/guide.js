@@ -70,6 +70,15 @@ const GUIDES = {
       ["#submitFinal", "Submit", "Locks the score. Use the button next to it to go back and fix something first."],
     ] },
   ],
+  feedback: [{
+    key: "feedback", when: "#form", steps: [
+      [null, "Feedback", "Technicians fill this in at the end of the day (they scan the Feedback QR code). It takes about 2 minutes."],
+      ["#event", "Event and name", "Choose the event and company, and type the name (as in registration) and email address. On a phone used for registration, the name fills in by itself."],
+      ["#ratings", "Ratings", "Rate each part of the day from 1 (Poor) to 5 (Excellent). Every rating is required."],
+      ["#wentWell", "Comments", "Optional: what went well and what can be improved."],
+      ["#sendBtn", "Send", "Sends the feedback. On the demo website nothing is saved."],
+    ],
+  }],
   admin: [{
     key: "admin", when: "#testBtn", steps: [
       ["#testBtn", "Test connection", "Checks that the website is working."],

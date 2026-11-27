@@ -579,3 +579,16 @@ body.is-shielded .privacy-shield { display: flex; position: fixed; inset: 0; z-i
 .guide-actions { display: flex; gap: 8px; align-items: center; }
 .guide-actions span { flex: 1; }
 @media print { .guide-fab, .guide-dim, .guide-spot, .guide-tip { display: none !important; } }
+
+/* ---------- feedback ratings (feedback.html) ---------- */
+.rate { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 14px 12px; margin: 10px 0; background: #fff; }
+.rate legend { padding: 0 6px; margin-left: -6px; font-weight: 600; font-size: .92rem; color: var(--ink); }
+.rate.missing { border-color: var(--err); box-shadow: 0 0 0 1px var(--err) inset; background: var(--err-50); }
+.rate-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.rate-opt { margin: 0; position: relative; }
+.rate-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rate-opt span { display: grid; place-items: center; min-height: 46px; border: 1.5px solid var(--line-strong); border-radius: var(--r-sm);
+  font-family: var(--head); font-size: 1.1rem; font-weight: 600; color: var(--ink-2); cursor: pointer; background: #fff; transition: all .12s; }
+.rate-opt span:hover { border-color: var(--orange); background: var(--orange-50); }
+.rate-opt input:checked + span { background: var(--crimson); border-color: var(--crimson); color: #fff; }
+.rate-opt input:focus-visible + span { box-shadow: var(--ring); }

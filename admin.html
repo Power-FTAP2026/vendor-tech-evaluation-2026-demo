@@ -161,7 +161,7 @@
       sec.querySelector(".lead").textContent = "Not available on the demo website.";
       $("qrGrid").outerHTML = `<div class="alert info">QR codes are blocked on the demo website. Print the QR codes from the Admin page of the real website.</div>`;
     } else
-    [["Registration", "register.html"], ["Theoretical Exam", "exam.html"], ["Practical Evaluation (evaluators)", "practical.html"]]
+    [["Registration", "register.html"], ["Theoretical Exam", "exam.html"], ["Practical Evaluation (evaluators)", "practical.html"], ["Feedback", "feedback.html"]]
       .forEach(([label, page], i) => {
         const url = base + page;
         $("qrGrid").insertAdjacentHTML("beforeend",

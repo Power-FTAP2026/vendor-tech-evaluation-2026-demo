@@ -14,6 +14,9 @@ export const EVENT = {
 // true only on the separate DEMO website (set automatically by tools/build-demo.mjs) — never connects to Google.
 export const DEMO_SITE = true;
 export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbtzd_Qe_gqeqm9pgeHSp0Pa01GJlC6IPu7iJBSvuGFeosSPkR_F5oJCg3herhY-zp/exec";
+// Separate FEEDBACK backend ("[FEEDBACK] Vendors Technician Evaluation 2026" Sheet + its own Apps Script).
+// Empty = the Feedback page runs in practice mode (nothing saved).
+export const FEEDBACK_URL = ""; // demo website: feedback is never saved
 export const LINKS = {
   sheet: "https://docs.google.com/spreadsheets/d/1EZZeUC1hAoFhFl8BjAgx6lt3n1vE-Ujz34KnoPbahp4/edit",
   drive: "https://drive.google.com/drive/folders/1Nh2C8AY5nLaSFCTqsJig-uTuRNn5_7cL",

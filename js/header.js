@@ -10,10 +10,11 @@ const links = [
   ["register", "register.html", "Registration", "user"],
   ["exam", "exam.html", "Theoretical", "pen"],
   ["practical", "practical.html", "Practical", "wrench"],
+  ["feedback", "feedback.html", "Feedback", "send"],
   ["admin", "admin.html", "Admin", "settings"],
 ];
-// Participants' pages (register/exam) only show the brand, so nobody wanders off mid-exam.
-const showNav = !["register", "exam"].includes(page);
+// Participants' pages (register/exam/feedback) only show the brand, so nobody wanders off mid-exam.
+const showNav = !["register", "exam", "feedback"].includes(page);
 el.innerHTML = `
   <div class="inner">
     <a class="brand" href="${showNav || DEMO_SITE ? "index.html" : "#"}" ${showNav || DEMO_SITE ? 'title="Back to Dashboard"' : 'onclick="return false"'}>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#b71c2e" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Feedback</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top" data-page="feedback" data-sub="Feedback"></header>
+  <main>
+    <div id="msg"></div>
+    <form id="form" class="card" novalidate>
+      <div class="title-row"><span class="title-icon"><i data-icon="send" data-size="22"></i></span>
+        <div><h2>Feedback</h2><p class="lead">Tell us about your evaluation day. It takes about 2 minutes.</p></div></div>
+
+      <h3 class="sec"><i data-icon="user" data-size="16"></i> About you</h3>
+      <div class="grid2">
+        <div><label for="event">Event <span class="req">*</span></label>
+          <select id="event" required><option value="">— select —</option></select></div>
+        <div><label for="company">Company <span class="req">*</span></label>
+          <select id="company" required><option value="">— select —</option></select></div>
+      </div>
+      <div class="grid3">
+        <div><label for="surname">Surname <span class="req">*</span></label><input id="surname" required autocomplete="family-name" /></div>
+        <div><label for="firstName">First Name <span class="req">*</span></label><input id="firstName" required autocomplete="given-name" /></div>
+        <div><label for="mi">M.I.</label><input id="mi" maxlength="3" placeholder="e.g. P" /></div>
+      </div>
+      <label for="email">Email address <span class="req">*</span></label>
+      <input id="email" type="email" required maxlength="120" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="e.g. juan.delacruz@gmail.com" />
+      <p class="muted" style="margin:6px 0 0">This will be used as reference to share your results and certification of participation.</p>
+
+      <h3 class="sec"><i data-icon="checkCircle" data-size="16"></i> Your ratings</h3>
+      <p class="muted" style="margin:0 0 4px">1 = Poor · 2 = Fair · 3 = Good · 4 = Very good · 5 = Excellent</p>
+      <div id="ratings"></div>
+
+      <h3 class="sec"><i data-icon="pen" data-size="16"></i> Your comments</h3>
+      <label for="wentWell">What went well?</label>
+      <textarea id="wentWell" maxlength="1000" placeholder="Optional"></textarea>
+      <label for="improve">What can we improve?</label>
+      <textarea id="improve" maxlength="1000" placeholder="Optional"></textarea>
+
+      <button class="block" type="submit" id="sendBtn"><i data-icon="send"></i> Send feedback</button>
+    </form>
+
+    <div id="done" class="card hidden">
+      <div class="success-head"><span class="success-icon"><i data-icon="check" data-size="26"></i></span><h2>Thank you!</h2></div>
+      <p id="doneText">Your feedback has been sent.</p>
+      <button type="button" class="secondary" id="againBtn">Send feedback for another person</button>
+    </div>
+  </main>
+
+  <script type="module" src="js/header.js"></script>
+  <script type="module">
+    import { EVENTS, todaysEvent, COMPANIES, FEEDBACK_URL, DEMO_SITE } from "./js/config.js";
+    import { esc } from "./js/people.js";
+    import { icon } from "./js/icons.js";
+    import { forceUpper } from "./js/uppercase.js";
+
+    const $ = (id) => document.getElementById(id);
+    const RATINGS = [
+      ["overall", "Overall event"],
+      ["registration", "Registration process"],
+      ["exam", "Theoretical exam (clarity of questions)"],
+      ["practical", "Practical evaluation (fairness)"],
+      ["venue", "Venue & organization"],
+      ["app", "The app / website"],
+    ];
+    const DONE_KEY = "feedbackSent";
+    // Separate feedback backend (its own Google Sheet). Not connected yet / demo website → practice only.
+    const LIVE = !DEMO_SITE && /^https:\/\/script\.google(usercontent)?\.com\//.test(FEEDBACK_URL);
+
+    // ---------- form ----------
+    EVENTS.forEach(e => $("event").insertAdjacentHTML("beforeend", `<option>${esc(e.name)}</option>`));
+    $("event").value = todaysEvent().name;
+    COMPANIES.forEach(c => $("company").insertAdjacentHTML("beforeend", `<option>${esc(c)}</option>`));
+    $("ratings").innerHTML = RATINGS.map(([k, label]) => `
+      <fieldset class="rate" id="r_${k}"><legend>${esc(label)} <span class="req">*</span></legend>
+        <div class="rate-row">${[1, 2, 3, 4, 5].map(n =>
+          `<label class="rate-opt"><input type="radio" name="${k}" value="${n}" /><span>${n}</span></label>`).join("")}</div>
+      </fieldset>`).join("");
+    forceUpper($("surname"), $("firstName"), $("mi"));
+
+    // the person registered on this phone → fill in their name
+    try {
+      const reg = JSON.parse(localStorage.getItem("registrant") || "null");
+      if (reg?.surname) { $("company").value = reg.company || ""; $("surname").value = reg.surname; $("firstName").value = reg.firstName || ""; $("mi").value = reg.mi || ""; }
+    } catch { /* ignore */ }
+
+    if (!LIVE) $("msg").innerHTML = DEMO_SITE
+      ? `<div class="alert info"><b>DEMO website:</b> practise freely — feedback sent here is not saved.</div>`
+      : `<div class="alert info"><b>Practice mode:</b> the feedback form isn't connected to its Google Sheet yet — nothing is saved.</div>`;
+
+    // ---------- send ----------
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    async function send(data) {
+      if (!LIVE) { await sleep(500); return { ok: true }; }
+      let last = "No internet connection. Please check your signal and try again.";
+      for (let a = 0; a <= 5; a++) {
+        if (a) await sleep(Math.min(8000, 700 * 2 ** (a - 1)) + Math.random() * 600);
+        try {
+          const r = await fetch(FEEDBACK_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "feedback", ...data }) });
+          let j; try { j = JSON.parse(await r.text()); } catch { last = "The server is busy. Please try again."; continue; }
+          if (j.ok) return j;
+          if (!j.retry) throw new Error(j.message || "Something went wrong.");
+          last = j.message || last;
+        } catch (e) { if (e.message && !/fetch|network|load/i.test(e.message)) throw e; }
+      }
+      throw new Error(last);
+    }
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("msg").querySelectorAll(".alert.error").forEach(n => n.remove());
+      document.querySelectorAll(".rate.missing").forEach(n => n.classList.remove("missing"));
+      const ratings = {}, missing = [];
+      RATINGS.forEach(([k]) => { const v = document.querySelector(`input[name="${k}"]:checked`)?.value; if (v) ratings[k] = Number(v); else missing.push(k); });
+      const need = ["event", "company", "surname", "firstName"].find(id => !$(id).value.trim());
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($("email").value.trim());
+      if (!need && !emailOk) {
+        $("msg").insertAdjacentHTML("beforeend", `<div class="alert error">Please enter a valid email address (e.g. juan.delacruz@gmail.com).</div>`);
+        $("email").scrollIntoView({ block: "center" }); $("email").focus({ preventScroll: true }); return;
+      }
+      if (need || missing.length) {
+        missing.forEach(k => $("r_" + k).classList.add("missing"));
+        const first = need ? $(need) : $("r_" + missing[0]);
+        $("msg").insertAdjacentHTML("beforeend", `<div class="alert error">${need ? "Please fill in your event, company, name and email." : "Please answer every rating (1 to 5)."}</div>`);
+        first.scrollIntoView({ block: "center" }); return;
+      }
+      $("sendBtn").disabled = true; $("sendBtn").textContent = "Sending… please wait";
+      try {
+        await send({ event: $("event").value, company: $("company").value, surname: $("surname").value, firstName: $("firstName").value,
+          mi: $("mi").value, email: $("email").value.trim().toLowerCase(), ratings, wentWell: $("wentWell").value, improve: $("improve").value });
+        try { localStorage.setItem(DONE_KEY, JSON.stringify({ name: `${$("surname").value}, ${$("firstName").value}` })); } catch { /* ignore */ }
+        showDone();
+      } catch (err) {
+        $("msg").insertAdjacentHTML("beforeend", `<div class="alert error">${esc(err.message)} Your answers are still here — press <b>Send feedback</b> again.</div>`);
+        window.scrollTo(0, 0);
+      } finally { $("sendBtn").disabled = false; $("sendBtn").innerHTML = `${icon("send")} Send feedback`; }
+    });
+
+    function showDone() {
+      let sent = null; try { sent = JSON.parse(localStorage.getItem(DONE_KEY) || "null"); } catch { /* ignore */ }
+      $("form").classList.add("hidden"); $("done").classList.remove("hidden");
+      $("doneText").textContent = sent?.name ? `Thank you, ${sent.name}. Your feedback has been sent.` : "Your feedback has been sent.";
+      $("msg").querySelectorAll(".alert.error").forEach(n => n.remove());
+      window.scrollTo(0, 0);
+    }
+    $("againBtn").onclick = () => {
+      try { localStorage.removeItem(DONE_KEY); } catch { /* ignore */ }
+      $("form").reset(); $("event").value = todaysEvent().name;
+      ["surname", "firstName", "mi", "email"].forEach(id => $(id).value = "");
+      $("done").classList.add("hidden"); $("form").classList.remove("hidden"); window.scrollTo(0, 0);
+    };
+    try { if (localStorage.getItem(DONE_KEY)) showDone(); } catch { /* ignore */ }
+  </script>
+</body>
+</html>
