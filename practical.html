@@ -295,13 +295,14 @@
     const setT = (k, what, v) => v ? sessionStorage.setItem(sKey(k, what), String(v)) : sessionStorage.removeItem(sKey(k, what));
     const running = (k) => !!getT(k, "start") && !getT(k, "stop");
     const clock = (t) => new Date(t).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" });
-    const mmss = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+    // stopwatch style hh:mm:ss, counting UP from 00:00:00
+    const hms = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), p = (n) => String(n).padStart(2, "0"); return `${p(Math.floor(s / 3600))}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}`; };
 
     function renderTimer() {                                // builds the timer for the current station
       const segs = segments();
       $("stSegs").innerHTML = segs.map((label, k) => `
         <div class="st-seg" data-k="${k}">
-          <div class="st-seg-main"><span class="st-timer-label">${esc(label || "Station timer")} · ${PRACTICAL.minutesPerStation} min</span>
+          <div class="st-seg-main"><span class="st-timer-label">${esc(label || "Station timer")} · ${PRACTICAL.minutesPerStation}-min limit</span>
             <span class="st-timer-clock"></span></div>
           <div class="st-btns">
             <button type="button" class="small st-start" data-k="${k}"></button>
@@ -319,8 +320,9 @@
         const left = start ? start + LIMIT_MS - (stop || Date.now()) : LIMIT_MS;
         if (start && !stop && left <= 0 && !alerted[k]) { alerted[k] = true; alertTimeUp(); }
         el.className = "st-seg " + (!start ? "waiting" : stop ? "finished" : left <= 0 ? "running over" : left <= WARN_MS ? "running warn" : "running");
-        el.querySelector(".st-timer-clock").textContent = !start ? mmss(LIMIT_MS)
-          : stop ? `Stopped · used ${mmss(stop - start)}` : left > 0 ? mmss(left) : `Time's up +${mmss(-left)}`;
+        const used = start ? (stop || Date.now()) - start : 0;   // counts up from 00:00:00
+        el.querySelector(".st-timer-clock").textContent = !start ? hms(0)
+          : stop ? `Stopped · ${hms(used)}` : left > 0 ? hms(used) : `${hms(used)} · Time's up`;
         const startBtn = el.querySelector(".st-start"), label = start && stop ? "Start again" : "Start";
         if (startBtn.dataset.label !== label) { startBtn.dataset.label = label; startBtn.innerHTML = `${icon("play", 14)} ${label}`; }
         startBtn.hidden = running(k);
@@ -347,7 +349,7 @@
     function timerLog() {
       return segments().map((label, k) => {
         const start = getT(k, "start"), stop = getT(k, "stop");
-        const txt = !start ? "not started" : `Start ${clock(start)} · ${stop ? `Stop ${clock(stop)} (${mmss(stop - start)})` : "still running"}`;
+        const txt = !start ? "not started" : `Start ${clock(start)} · ${stop ? `Stop ${clock(stop)} (${hms(stop - start)})` : "still running"}`;
         return (label ? label + ": " : "") + txt;
       }).join(" | ");
     }
