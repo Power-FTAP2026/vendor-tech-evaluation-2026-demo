@@ -17,6 +17,9 @@ export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbtzd_Qe_gqe
 // Separate FEEDBACK backend ("[FEEDBACK] Vendors Technician Evaluation 2026" Sheet + its own Apps Script).
 // Empty = the Feedback page runs in practice mode (nothing saved).
 export const FEEDBACK_URL = ""; // demo website: feedback is never saved
+// MAINTENANCE NOTICE: until this moment (Philippine time) the real website shows a "under maintenance" cover on every page.
+// It switches off by itself at that time. Staff can still use the site by opening any page once with ?staff at the end.
+export const MAINTENANCE = { until: "2026-11-28T03:00:00+08:00", backBy: "3:00 AM" };
 export const LINKS = {
   sheet: "https://docs.google.com/spreadsheets/d/1EZZeUC1hAoFhFl8BjAgx6lt3n1vE-Ujz34KnoPbahp4/edit",
   drive: "https://drive.google.com/drive/folders/1Nh2C8AY5nLaSFCTqsJig-uTuRNn5_7cL",

@@ -592,3 +592,13 @@ body.is-shielded .privacy-shield { display: flex; position: fixed; inset: 0; z-i
 .rate-opt span:hover { border-color: var(--orange); background: var(--orange-50); }
 .rate-opt input:checked + span { background: var(--crimson); border-color: var(--crimson); color: #fff; }
 .rate-opt input:focus-visible + span { box-shadow: var(--ring); }
+
+/* ---------- maintenance notice (js/header.js) ---------- */
+.maint-cover { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 16px;
+  background: rgba(255, 255, 255, .72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.maint-box { max-width: 420px; width: 100%; text-align: center; background: #fff; border: 1px solid var(--line);
+  border-top: 4px solid var(--crimson); border-radius: var(--r-lg); box-shadow: var(--sh-3); padding: 26px 24px 22px; }
+.maint-box h2 { margin: 10px 0 8px; font-family: var(--head); }
+.maint-box p { margin: 0 0 8px; color: var(--ink-2); line-height: 1.5; }
+.maint-ic { display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--crimson-50); color: var(--crimson); }
+body.maint-on { overflow: hidden; }
