@@ -38,9 +38,10 @@ document.body.appendChild(footer);
 
 hydrateIcons();
 
-// Demo website: leak deterrents on every page (content hidden when the page loses focus, no copy/print, Print Screen warning)
-// Screenshot/copy/print deterrents on every page — except Admin, whose QR codes must stay printable.
-if (page !== "admin") { document.querySelector("main")?.classList.add("protected"); protectPage(); }
+// Leak deterrents (content hidden when the page loses focus, no copy/print, Print Screen warning) on every page, real and demo.
+// Live Monitoring is the ONLY page that may be screenshotted / copied / printed (management report view).
+// Admin is protected too, but its QR codes can still be printed.
+if (page !== "monitor") { document.querySelector("main")?.classList.add("protected"); protectPage({ allowPrint: page === "admin" }); }
 if (DEMO_SITE) import("./guide.js");
 
 // Pages that open later (real website only): Registration / Theoretical stay covered until OPENS_AT.until, then open by themselves.

@@ -7,10 +7,11 @@ let installed = false;
 let shield = null, toastTimer = null;
 
 /** Turns on the deterrents for the whole page. Elements with class "protected" are blurred when the page is not in focus. */
-export function protectPage() {
+export function protectPage({ allowPrint = false } = {}) {
   if (installed) return;
   installed = true;
   document.body.classList.add("no-copy");
+  if (allowPrint) document.body.classList.add("allow-print"); // Admin: the QR codes must stay printable
 
   shield = document.createElement("div");
   shield.className = "privacy-shield";
@@ -37,7 +38,7 @@ export function protectPage() {
   // keyboard: Print Screen, print, save, view-source
   document.addEventListener("keydown", (e) => {
     const k = (e.key || "").toLowerCase(), mod = e.ctrlKey || e.metaKey;
-    if (mod && ["p", "s", "u"].includes(k)) { e.preventDefault(); warn("Printing and saving this page is not allowed."); }
+    if (mod && (allowPrint ? ["s", "u"] : ["p", "s", "u"]).includes(k)) { e.preventDefault(); warn("Printing and saving this page is not allowed."); }
     if (mod && k === "c" && !isField(e.target)) { e.preventDefault(); }
     if (mod && e.shiftKey && ["s", "3", "4", "5"].includes(k)) { hide(); warn("Screenshots are not allowed."); } // Win+Shift+S / Mac screenshot keys
   }, true);
@@ -47,8 +48,7 @@ export function protectPage() {
       hide(); warn("Screenshots are not allowed."); setTimeout(show, 1500);
     }
   }, true);
-  window.addEventListener("beforeprint", hide);
-  window.addEventListener("afterprint", show);
+  if (!allowPrint) { window.addEventListener("beforeprint", hide); window.addEventListener("afterprint", show); }
 }
 
 function warn(text) {

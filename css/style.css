@@ -569,7 +569,7 @@ body.is-shielded .privacy-shield { display: flex; position: fixed; inset: 0; z-i
 /* watermark layer over sensitive content */
 .wm-host { position: relative; }
 .wm-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; background-repeat: repeat; }
-@media print { .protected, .wm-host { display: none !important; } body.no-copy main::after { content: "Printing is not allowed."; } }
+@media print { body:not(.allow-print) .protected, .wm-host { display: none !important; } body.no-copy:not(.allow-print) main::after { content: "Printing is not allowed."; } }
 
 /* ---------- demo website: instruction popups (js/guide.js) ---------- */
 .guide-fab { position: fixed; right: 16px; bottom: 16px; z-index: 900; border-radius: var(--r-pill); min-height: 44px; padding: 8px 16px; box-shadow: var(--sh-3); gap: 8px; }
