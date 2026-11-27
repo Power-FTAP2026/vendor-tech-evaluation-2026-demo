@@ -119,13 +119,16 @@
       const { rows, kpi } = buildBoard(board, session);
       const theoSize = kpi.theoAssigned, pracSize = kpi.pracAssigned;
       const nSt = board.stationsTotal || 0;
+      // e.g. "19 PM batch + 2 pending from AM" (afternoon) · "18 AM batch + 1 started early" (morning)
+      const onSub = (sched, extra, size) => !extra ? `of ${size} scheduled this session`
+        : `${sched} ${session} batch + ${extra} ${session === "PM" ? "pending from AM" : "started early"}`;
       $("kAtt").textContent = kpi.attendance;
       $("kTheoOn").textContent = kpi.theoOngoing;
-      $("kTheoOnSub").textContent = `of ${theoSize} assigned this session`;
+      $("kTheoOnSub").textContent = onSub(kpi.theoSched, kpi.theoExtra, theoSize);
       $("kTheoDone").textContent = kpi.theoDone;
       $("kTheoDoneSub").textContent = `of ${kpi.attendance} submitted`;
       $("kPracOn").textContent = kpi.pracOngoing;
-      $("kPracOnSub").textContent = `of ${pracSize} assigned this session`;
+      $("kPracOnSub").textContent = onSub(kpi.pracSched, kpi.pracExtra, pracSize);
       $("kPracDone").textContent = kpi.pracDone;
       $("kPracDoneSub").textContent = `of ${kpi.attendance} · all ${nSt} stations`;
 

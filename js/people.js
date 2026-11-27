@@ -26,18 +26,21 @@ export const scheduleText = (group) => group === "T"
   : "Morning — Practical Evaluation · Afternoon — Theoretical Exam";
 
 // Not started yet → show which batch the person is scheduled in for that evaluation.
+// In the afternoon, an AM-batch person who still hasn't started is "Pending" (they can still do it in the PM).
 export function theoStatus(group, session, raw) {
   if (raw === "done") return "Done";
   if (raw === "ongoing") return "Ongoing";
   if (raw === "live") return "Live";
-  return group === "T" ? "AM Batch" : "PM Batch";
+  if (group === "T") return session === "PM" ? "Pending" : "AM Batch";
+  return "PM Batch";
 }
 
 export function pracStatus(group, session, raw) {
   if (raw === "done") return "Done";
   if (raw === "ongoing") return "Ongoing";
   if (raw === "live") return "Live";
-  return group === "P" ? "AM Batch" : "PM Batch";
+  if (group === "P") return session === "PM" ? "Pending" : "AM Batch";
+  return "PM Batch";
 }
 
 /** Builds the participant rows + KPI numbers for the dashboard from the server's "board" data. */
@@ -52,12 +55,18 @@ export function buildBoard(board, session) {
   }));
   const theoGroup = session === "AM" ? "T" : "P";
   const pracGroup = session === "AM" ? "P" : "T";
+  // Ongoing = not done yet AND (scheduled this session, OR pending from the morning batch, OR already started early)
+  const started = (st) => st === "Ongoing" || st === "Live";
+  const theoSched = rows.filter(r => r.group === theoGroup && r.theo !== "Done").length;
+  const pracSched = rows.filter(r => r.group === pracGroup && r.prac !== "Done").length;
+  const theoExtra = rows.filter(r => r.group !== theoGroup && r.theo !== "Done" && (session === "PM" || started(r.theo))).length;
+  const pracExtra = rows.filter(r => r.group !== pracGroup && r.prac !== "Done" && (session === "PM" || started(r.prac))).length;
   const kpi = {
     attendance: rows.length,
     theoDone: rows.filter(r => r.theo === "Done").length,
-    theoOngoing: rows.filter(r => r.group === theoGroup && r.theo !== "Done").length,
+    theoOngoing: theoSched + theoExtra, theoSched, theoExtra,
     pracDone: rows.filter(r => r.prac === "Done").length,
-    pracOngoing: rows.filter(r => r.group === pracGroup && r.prac !== "Done").length,
+    pracOngoing: pracSched + pracExtra, pracSched, pracExtra,
     // actual schedule (an admin can move people between AM and PM, so it isn't always a 50/50 split)
     theoAssigned: rows.filter(r => r.group === theoGroup).length,
     pracAssigned: rows.filter(r => r.group === pracGroup).length,
