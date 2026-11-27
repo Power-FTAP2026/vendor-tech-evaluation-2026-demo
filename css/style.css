@@ -329,7 +329,6 @@ code.regid { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; 
 /* not started yet → their batch */
 .pill.am-batch { background: #edf3f8; color: #35546d; border-color: #d6e3ee; }
 .pill.pm-batch { background: #f1eff5; color: #5b5670; border-color: #e1dde9; }
-.pill.pending { background: var(--warn-50); color: var(--warn); border-color: #f6d3b3; }
 .pill.am-batch::before, .pill.pm-batch::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
 .pill.am-batch::before { background: #6f93b0; }
 .pill.pm-batch::before { background: #8b84a3; }

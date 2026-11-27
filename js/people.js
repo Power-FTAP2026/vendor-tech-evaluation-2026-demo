@@ -26,21 +26,18 @@ export const scheduleText = (group) => group === "T"
   : "Morning — Practical Evaluation · Afternoon — Theoretical Exam";
 
 // Not started yet → show which batch the person is scheduled in for that evaluation.
-// In the afternoon, an AM-batch person who still hasn't started is "Pending" (they can still do it in the PM).
 export function theoStatus(group, session, raw) {
   if (raw === "done") return "Done";
   if (raw === "ongoing") return "Ongoing";
   if (raw === "live") return "Live";
-  if (group === "T") return session === "PM" ? "Pending" : "AM Batch";
-  return "PM Batch";
+  return group === "T" ? "AM Batch" : "PM Batch";
 }
 
 export function pracStatus(group, session, raw) {
   if (raw === "done") return "Done";
   if (raw === "ongoing") return "Ongoing";
   if (raw === "live") return "Live";
-  if (group === "P") return session === "PM" ? "Pending" : "AM Batch";
-  return "PM Batch";
+  return group === "P" ? "AM Batch" : "PM Batch";
 }
 
 /** Builds the participant rows + KPI numbers for the dashboard from the server's "board" data. */
