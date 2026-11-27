@@ -55,7 +55,7 @@ const GUIDES = {
     ] },
     { key: "station", when: "#pickerBox", steps: [
       ["#whoBar", "You", "Your name and station. Log out when you are finished."],
-      ["#pickerBox", "Choose the technician", "First, type the technician's name and tap them in the list. Technicians already scored at your station can't be chosen again."],
+      ["#pickerBox", "Choose the technician", "First, type the technician's name and tap them in the list. Check the surname and company: names marked \"similar name\" look like someone else's. Technicians already scored at your station can't be chosen again."],
       ["#scenarios", "Scenarios", "Your station's scenarios. Score each one: Pass / Fail (5 or 0) or 0 to 5, as written on it."],
       ["#total", "Total", "The total updates as you score."],
       ["#remarks", "Remarks", "Optional notes about the technician."],
@@ -67,6 +67,7 @@ const GUIDES = {
     ] },
     { key: "confirm", when: "#confirmPage", steps: [
       ["#confirmRows", "Check the scores", "Make sure every score is right."],
+      ["#confirmCheck .same-check", "Similar names", "Another technician has a similar name. Ask the technician to say their full name (or show their ID), then tick this box. Submit stays off until you do."],
       ["#submitFinal", "Submit", "Locks the score. Use the button next to it to go back and fix something first."],
     ] },
   ],

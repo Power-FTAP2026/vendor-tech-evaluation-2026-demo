@@ -602,3 +602,13 @@ body.is-shielded .privacy-shield { display: flex; position: fixed; inset: 0; z-i
 .maint-box p { margin: 0 0 8px; color: var(--ink-2); line-height: 1.5; }
 .maint-ic { display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--crimson-50); color: var(--crimson); }
 body.maint-on { overflow: hidden; }
+
+/* Practical: similar-name warnings */
+.similar-note { margin: 0 0 6px; padding: 8px 10px; border-radius: 10px; background: var(--warn-50); color: #873c08; font-size: .85rem; }
+.similar-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--warn-50); color: var(--warn);
+  border: 1px solid #f6d3b3; font-size: .72rem; font-weight: 700; white-space: nowrap; vertical-align: middle; }
+.similar-confirm { margin-top: 14px; }
+.same-check { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 10px 12px; border: 2px solid #f6d3b3; border-radius: 10px;
+  background: #fff; color: var(--ink); font-size: .92rem; cursor: pointer; }
+.same-check:has(input:checked) { border-color: var(--ok); background: var(--ok-50); }
+.same-check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--crimson); flex: none; }

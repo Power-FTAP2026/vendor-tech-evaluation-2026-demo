@@ -96,6 +96,7 @@
       </div>
       <div class="total" id="confirmTotal"></div>
       <div id="confirmRemarks"></div>
+      <div id="confirmCheck"></div>
       <button class="block" type="button" id="submitFinal"><i data-icon="check"></i> Submit final scores</button>
       <button class="secondary block" type="button" id="backToEdit"><i data-icon="arrowLeft"></i> Back to edit</button>
     </section>
@@ -246,14 +247,36 @@
       const hits = people.filter(p => { const n = norm(fullName(p) + " " + p.company); return words.every(w => n.includes(w)); })
         .sort((a, b) => fullName(a).localeCompare(fullName(b))).slice(0, 8);
       $("techResults").innerHTML = hits.length
-        ? hits.map(p => {
+        ? (hits.length > 1 ? `<p class="similar-note">${icon("alert", 14)} ${hits.length} people match. Check the <b>surname</b> and company before you tap.</p>` : "") +
+          hits.map(p => {
             const done = (p.stations || []).includes(current.name);
+            const alike = lookAlikes(p).length;
             return `<button type="button" class="tech-hit ${done ? "locked" : ""}" data-id="${esc(p.id)}" ${done ? "disabled" : ""}>
-              <span><b>${esc(fullName(p))}</b><span class="muted"> · ${esc(p.company)} · ${esc(p.role)}</span></span>
+              <span><b>${esc(fullName(p))}</b><span class="muted"> · ${esc(p.company)} · ${esc(p.role)}</span>${alike ? ` <span class="similar-tag">similar name</span>` : ""}</span>
               <span class="${done ? "hit-done" : "muted"}">${done ? `${icon("lock", 14)} Submitted` : `${(p.stations || []).length}/${stations.length} stations`}</span></button>`;
           }).join("")
         : `<p class="muted">No registered technician matches “${esc($("techSearch").value)}”.</p>`;
     }
+    // ---------- similar names (e.g. "RIOGELON, NESTOR" vs "BENDIGOZA, NESTOR JR") ----------
+    const SKIP_WORDS = new Set(["jr", "sr", "ii", "iii", "iv", "de", "del", "dela", "la", "delos", "los", "san", "sta", "sto"]);
+    const nameWords = (p) => norm(`${p.surname} ${p.firstName}`).split(/\s+/).filter(w => w.length >= 3 && !SKIP_WORDS.has(w));
+    const near = (a, b) => { // same word, or one letter different (typo), for words of 6+ letters
+      if (a === b) return true;
+      if (Math.min(a.length, b.length) < 6 || Math.abs(a.length - b.length) > 1) return false;
+      let i = 0, j = 0, diff = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) { i++; j++; continue; }
+        if (++diff > 1) return false;
+        if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+      }
+      return diff + (a.length - i) + (b.length - j) <= 1;
+    };
+    function lookAlikes(p) {
+      const mine = nameWords(p);
+      return people.filter(o => o.id !== p.id && nameWords(o).some(w => mine.some(m => near(m, w))));
+    }
+    const alikeText = (list) => list.slice(0, 3).map(o => `<b>${esc(fullName(o))}</b> (${esc(o.company)})`).join(", ") + (list.length > 3 ? ` and ${list.length - 3} more` : "");
+
     $("techSearch").addEventListener("input", renderResults);
     $("techResults").addEventListener("click", (e) => {
       const b = e.target.closest(".tech-hit"); if (!b || b.disabled) return;
@@ -357,6 +380,9 @@
       $("personNote").innerHTML = locked
         ? `<div class="alert error">This technician's scores for this station were already submitted and can't be changed.
             Choose another technician.</div>` : "";
+      const alike = locked ? [] : lookAlikes(selected);
+      if (alike.length) $("personNote").innerHTML = `<div class="alert warn"><b>Similar name registered:</b> ${alikeText(alike)}.
+        Ask the technician to say their <b>full name</b> (or show their ID) and make sure it is <b>${esc(fullName(selected))}</b> of ${esc(selected.company)}.</div>`;
       $("scenarios").classList.toggle("hidden", locked);
       ["total", "remarks", "saveBtn"].forEach(id => $(id).classList.toggle("hidden", locked));
       $("remarks").previousElementSibling?.classList.toggle("hidden", locked); // its label
@@ -459,6 +485,14 @@
       $("confirmTotal").textContent = `Total: ${pending.total} / ${pending.max}`;
       watermark($("confirmRows").closest(".table-wrap"), `${evaluator} · ${current.name}`);
       $("confirmRemarks").innerHTML = pending.remarks ? `<p><b>Remarks:</b> ${esc(pending.remarks)}</p>` : "";
+      // look-alike names → the evaluator must tick that they checked the person
+      const alike = lookAlikes(selected);
+      $("confirmCheck").innerHTML = alike.length ? `<div class="alert warn similar-confirm">
+          <p style="margin:0 0 8px"><b>Similar name registered:</b> ${alikeText(alike)}.</p>
+          <label class="same-check"><input type="checkbox" id="sameCheck" /><span> I asked the technician's full name and it is
+            <b>${esc(fullName(selected))}</b> of ${esc(selected.company)}.</span></label></div>` : "";
+      $("submitFinal").disabled = !!alike.length;
+      $("sameCheck")?.addEventListener("change", (e) => { $("submitFinal").disabled = !e.target.checked; });
       $("msg").innerHTML = ""; showDemoBanner($("msg"));
       show("confirmPage");
     });
