@@ -42,7 +42,7 @@
     @media (max-width: 760px) { .mon-hero { grid-template-columns: 1fr; padding: 22px 20px; } .mon-side { text-align: left; } .mon-updated { justify-content: flex-start; } }
 
     /* overview */
-    .mon-grid { display: grid; grid-template-columns: 320px 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .mon-grid { display: grid; grid-template-columns: 400px 1fr 1fr; gap: 16px; margin-top: 16px; }
     @media (max-width: 1080px) { .mon-grid { grid-template-columns: 1fr 1fr; } .mon-overall { grid-column: 1 / -1; } }
     @media (max-width: 680px) { .mon-grid { grid-template-columns: 1fr; } }
     .mon-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; box-shadow: var(--sh-2); min-width: 0; }
@@ -50,8 +50,27 @@
     .mon-card .mon-ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--crimson-50); color: var(--crimson); flex: none; }
     .mon-eyebrow { color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 
-    .mon-overall { display: flex; align-items: center; gap: 20px; }
+    .mon-overall { display: flex; flex-direction: column; gap: 14px; }
+    .rings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ring-block { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; min-width: 0; }
+    .ring-block .mon-eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .ring-sub { font-size: .78rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ring-cap { font-size: .82rem; color: var(--ink-2); line-height: 1.35; }
+    .ring-cap b { color: var(--ink); }
     .ring { position: relative; width: 132px; height: 132px; flex: none; }
+    .ring.small { width: 112px; height: 112px; }
+    .ring.small .pct b { font-size: 1.6rem; }
+    .ring.today .fill { stroke: var(--orange); }
+    .days { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 10px; }
+    .day-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .85rem; margin-bottom: 5px; }
+    .day-lab { font-weight: 600; color: var(--ink); }
+    .day-lab .muted { font-weight: 400; }
+    .day-lab .now { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--orange-50); color: #b43f14;
+      border: 1px solid var(--orange-100); font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; }
+    .day-num { color: var(--muted); white-space: nowrap; font-size: .8rem; }
+    .day-num b { color: var(--ink); font-size: .9rem; }
+    .day-row.is-today .bar > div { background: var(--orange); }
+    .days-empty { color: var(--muted); font-size: .85rem; }
     .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     .ring .track { stroke: var(--line); }
     .ring .fill { stroke: var(--ok); stroke-linecap: round; transition: stroke-dashoffset .8s ease; }
@@ -109,7 +128,8 @@
     body.fs .mon-clock { font-size: 2.6rem; }
     body.fs .mon-grid { margin-top: 12px; gap: 12px; }
     body.fs .mon-card { padding: 14px 18px; }
-    body.fs .ring { width: 112px; height: 112px; }
+    body.fs .ring { width: 104px; height: 104px; } body.fs .ring.small { width: 92px; height: 92px; }
+    body.fs .mon-overall { gap: 10px; } body.fs .days { padding-top: 8px; gap: 6px; }
     body.fs .trk-nums { margin: 10px 0 10px; }
     body.fs .trk-num { padding: 8px 12px; }
     body.fs .trk-num .val { font-size: 2.2rem; }
@@ -150,17 +170,27 @@
 
     <section class="mon-grid">
       <div class="mon-card mon-overall">
-        <div class="ring" id="ring" role="img" aria-label="Overall progress">
-          <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="12" />
-            <circle class="fill" id="ringFill" cx="60" cy="60" r="52" fill="none" stroke-width="12" stroke-dasharray="326.73" stroke-dashoffset="326.73" /></svg>
-          <div class="pct"><div><b id="ringPct">0%</b><span>completed</span></div></div>
+        <div class="rings">
+          <div class="ring-block" id="overallBlock">
+            <div><div class="mon-eyebrow">Overall</div><div class="ring-sub">2026 program · all regions</div></div>
+            <div class="ring" id="ring" role="img" aria-label="Overall progress">
+              <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="12" />
+                <circle class="fill" id="ringFill" cx="60" cy="60" r="52" fill="none" stroke-width="12" stroke-dasharray="326.73" stroke-dashoffset="326.73" /></svg>
+              <div class="pct"><div><b id="ringPct">0%</b><span>completed</span></div></div>
+            </div>
+            <div class="ring-cap"><b id="kAtt">–</b> registered<br><b id="kBoth">–</b> fully done</div>
+          </div>
+          <div class="ring-block" id="todayBlock">
+            <div><div class="mon-eyebrow">Today</div><div class="ring-sub" id="todayLabel"></div></div>
+            <div class="ring small today" id="ringToday" role="img" aria-label="Today's progress">
+              <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="12" />
+                <circle class="fill" id="ringTFill" cx="60" cy="60" r="52" fill="none" stroke-width="12" stroke-dasharray="326.73" stroke-dashoffset="326.73" /></svg>
+              <div class="pct"><div><b id="ringTPct">0%</b><span>completed</span></div></div>
+            </div>
+            <div class="ring-cap" id="todayCap"></div>
+          </div>
         </div>
-        <div>
-          <div class="mon-eyebrow">Attendance</div>
-          <div class="mon-att" id="kAtt">–</div>
-          <div class="mon-att-sub">registered participants</div>
-          <div class="mon-mini"><span>Fully done <b id="kBoth">–</b></span><span>Companies <b id="kCos">–</b></span></div>
-        </div>
+        <div class="days" id="dayList" aria-label="Progress per day"></div>
       </div>
 
       <div class="mon-card" id="theoCard">
@@ -210,7 +240,7 @@
   <script type="module" src="js/header.js"></script>
   <script type="module">
     import { api, errorText, showDemoBanner } from "./js/api.js";
-    import { COMPANIES, REGIONS, ROLES, AREAS, todaysEvent } from "./js/config.js";
+    import { COMPANIES, REGIONS, ROLES, AREAS, EVENTS, todaysEvent } from "./js/config.js";
     import { buildBoard, currentSession, esc, pill } from "./js/people.js";
     import { icon } from "./js/icons.js";
 
@@ -294,13 +324,7 @@
       stack($("tStack"), kpi.theoDone, kpi.theoOngoing, att, "Theoretical Exam");
       stack($("pStack"), kpi.pracDone, kpi.pracOngoing, att, "Practical Evaluation");
 
-      // overall = theoretical + practical evaluations completed, out of 2 per participant
-      const overall = pct(kpi.theoDone + kpi.pracDone, att * 2);
-      $("ringPct").textContent = overall + "%";
-      $("ringFill").style.strokeDashoffset = String(326.73 * (1 - overall / 100));
-      $("ring").setAttribute("aria-label", `Overall progress ${overall}% (theoretical and practical evaluations completed)`);
-      $("kBoth").textContent = rows.filter(r => r.theo === "Done" && r.prac === "Done").length;
-      $("kCos").textContent = new Set(rows.map(r => r.company).filter(Boolean)).size;
+      renderProgress(rows);
 
       renderCompanies(rows);
 
@@ -318,6 +342,48 @@
       $("empty").classList.toggle("hidden", shown.length > 0);
       $("count").textContent = shown.length === rows.length ? `${rows.length} total` : `${shown.length} of ${rows.length}`;
       requestAnimationFrame(() => fitList()); // full screen: the list fills what's left of the screen
+    }
+
+    // ---------- Overall (whole 2026 program) + Today + per day ----------
+    // progress = theoretical + practical evaluations completed, out of 2 per registered technician
+    const progress = (list) => pct(list.filter(r => r.theo === "Done").length + list.filter(r => r.prac === "Done").length, list.length * 2);
+    const fullyDone = (list) => list.filter(r => r.theo === "Done" && r.prac === "Done").length;
+    const localToday = () => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+    const shortDate = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+    // "Mindanao · Day 1" for a date that belongs to an event (EVENTS in config.js)
+    function dayName(d) {
+      const e = EVENTS.find(x => x.days.includes(d));
+      return e ? `${e.region} · Day ${e.days.indexOf(d) + 1}` : "Other day";
+    }
+    function setRing(fill, label, value) {
+      $(fill).style.strokeDashoffset = String(326.73 * (1 - value / 100));
+      $(label).textContent = value + "%";
+    }
+    function renderProgress(rows) {
+      const overall = progress(rows);
+      setRing("ringFill", "ringPct", overall);
+      $("ring").setAttribute("aria-label", `Overall progress, whole 2026 program: ${overall}% of evaluations completed`);
+      $("kAtt").textContent = rows.length;
+      $("kBoth").textContent = fullyDone(rows);
+
+      const today = localToday(), tRows = rows.filter(r => r.day === today);
+      const isEventDay = EVENTS.some(e => e.days.includes(today));
+      $("todayLabel").textContent = isEventDay ? `${dayName(today)} · ${shortDate(today)}` : shortDate(today);
+      setRing("ringTFill", "ringTPct", progress(tRows));
+      $("ringToday").setAttribute("aria-label", `Today's progress: ${progress(tRows)}% of evaluations completed`);
+      $("todayCap").innerHTML = tRows.length ? `<b>${tRows.length}</b> registered<br><b>${fullyDone(tRows)}</b> fully done`
+        : (isEventDay ? "No registrations yet today" : "No evaluation today");
+
+      // one line per day that has registrations, oldest first (older rows without a date go under "Earlier")
+      const days = [...new Set(rows.map(r => r.day || ""))].sort((a, b) => (a || "0").localeCompare(b || "0"));
+      $("dayList").innerHTML = days.length ? days.map(d => {
+        const list = rows.filter(r => (r.day || "") === d), p = progress(list), isToday = d === today;
+        const label = d ? `${esc(dayName(d))} <span class="muted">· ${esc(shortDate(d))}</span>` : "Earlier";
+        return `<div class="day-row ${isToday ? "is-today" : ""}">
+          <div class="day-top"><span class="day-lab">${label}${isToday ? '<span class="now">Today</span>' : ""}</span>
+            <span class="day-num"><b>${list.length}</b> registered · <b>${p}%</b></span></div>
+          <div class="bar" title="${d ? esc(dayName(d) + " · " + shortDate(d)) : "Earlier"}: ${p}% completed · ${fullyDone(list)} of ${list.length} fully done"><div style="width:${p}%"></div></div></div>`;
+      }).join("") : `<p class="days-empty">No registrations yet.</p>`;
     }
 
     function renderCompanies(rows) {

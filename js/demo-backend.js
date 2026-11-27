@@ -105,6 +105,8 @@ async function bank() {
 
 const RANK = { "": 0, live: 1, ongoing: 2, done: 3 };
 
+// "yyyy-MM-dd" in the visitor's own time zone (for daily progress)
+const localDay = (iso) => { const t = Date.parse(iso || ""); if (!t) return ""; const x = new Date(t); return new Date(t - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const actions = {
   ping: () => ({ app: "DEMO" }),
 
@@ -145,7 +147,7 @@ const actions = {
     const theo = load("theo", {}), prac = load("prac", {}), st = stations();
     return {
       stationsTotal: st.length, stationNames: st.map(s => s.name),
-      rows: regs().map(p => ({ ...pub(p), theo: theo[p.uid]?.status || "", prac: prac[p.uid]?.status || "", stations: prac[p.uid]?.stations || [] })),
+      rows: regs().map(p => ({ ...pub(p), theo: theo[p.uid]?.status || "", prac: prac[p.uid]?.status || "", stations: prac[p.uid]?.stations || [], day: localDay(p.registeredAt) })),
       updatedAt: new Date().toISOString(),
     };
   },

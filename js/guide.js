@@ -84,7 +84,7 @@ const GUIDES = {
   monitor: [{
     key: "monitor", when: "#ring", steps: [
       [null, "Live Monitoring", "A clean view of the evaluation for management. It shows the same live numbers as the Dashboard and updates by itself. There is no menu here: once opened, this page stays on Live Monitoring."],
-      [".mon-overall", "Overall progress", "Attendance, and how much of the evaluation is complete (theoretical exams and practical evaluations together)."],
+      [".mon-overall", "Overall and daily progress", "Overall: the whole 2026 program (all regions). Today: the technicians who registered today. Below, one line per evaluation day. Progress counts the theoretical exams and practical evaluations completed."],
       ["#theoCard", "Theoretical Exam", "Ongoing and done, with the same counts as the Dashboard. The bar shows done, ongoing and later session."],
       ["#pracCard", "Practical Evaluation", "Same for the practical: ongoing, done (scored at all stations) and later session."],
       ["#coGrid", "By company", "Progress of each company."],
