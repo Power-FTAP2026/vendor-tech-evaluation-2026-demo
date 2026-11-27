@@ -616,3 +616,13 @@ body.maint-on { overflow: hidden; }
   background: #fff; color: var(--ink); font-size: .92rem; cursor: pointer; }
 .same-check:has(input:checked) { border-color: var(--ok); background: var(--ok-50); }
 .same-check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--crimson); flex: none; }
+
+/* Registration: Scope of Work (tick all that apply) */
+.scope-box { border: 0; padding: 0; margin: 14px 0 0; min-width: 0; }
+.scope-box legend { padding: 0; margin-bottom: 6px; font-weight: 600; font-size: .92rem; color: var(--ink); }
+.scope-box .scope-hint { font-weight: 400; font-size: .8rem; }
+.scope-opt { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 10px 12px; border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-sm); background: #fff; font-weight: 500; cursor: pointer; }
+.scope-opt input { width: 20px; height: 20px; margin: 0; accent-color: var(--crimson); flex: none; }
+.scope-opt:has(input:checked) { border-color: var(--crimson); background: var(--crimson-50, #fdeeee); }
+.scope-box.missing .scope-opt { border-color: var(--err); }

@@ -23,6 +23,7 @@ const GUIDES = {
       ["#company", "Company", "Choose the company. Below it, choose Direct or Subcon."],
       ["#surname", "Name", "Type the surname, first name and middle initial. Letters change to CAPITALS automatically."],
       ["#role", "Role", "Choose the role. Pick \"Other\" to type a role that isn't on the list."],
+      ["#scopeBox", "Scope of Work", "Tick all the kinds of work the technician does: Preventive Maintenance, Corrective Maintenance, or Others (type it in the box that opens). At least one is required."],
       ["#area", "Area", "Choose the area. The Region fills in by itself."],
       ["#photoBox", "ID photo", "Take a photo of the company ID with the camera, or upload a picture."],
       ["#submitBtn", "Review", "Tap to check the details before they are saved."],

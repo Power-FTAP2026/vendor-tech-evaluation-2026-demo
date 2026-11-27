@@ -47,6 +47,17 @@
         <input id="roleOther" maxlength="40" placeholder="e.g. Electrician, Site Supervisor" autocomplete="organization-title" />
       </div>
 
+      <fieldset id="scopeBox" class="scope-box">
+        <legend>Scope of Work <span class="req">*</span> <span class="muted scope-hint">tick all that apply</span></legend>
+        <label class="scope-opt"><input type="checkbox" name="scope" value="Preventive Maintenance" /><span>Preventive Maintenance</span></label>
+        <label class="scope-opt"><input type="checkbox" name="scope" value="Corrective Maintenance" /><span>Corrective Maintenance</span></label>
+        <label class="scope-opt"><input type="checkbox" name="scope" value="__other" id="scopeOtherChk" /><span>Others</span></label>
+        <div id="scopeOtherBox" class="hidden">
+          <label for="scopeOther">Please specify <span class="req">*</span></label>
+          <input id="scopeOther" maxlength="60" placeholder="e.g. Installation, Site Survey" />
+        </div>
+      </fieldset>
+
       <div class="grid2">
         <div><label for="area">Area <span class="req">*</span></label><select id="area" required><option value="">— select —</option></select></div>
         <div><label for="region">Region <span class="req">*</span></label><select id="region" required><option value="">— select —</option></select></div>
@@ -131,6 +142,16 @@
       $("roleOther").required = other;
       if (other) $("roleOther").focus();
     });
+    // Scope of Work: tick all that apply; "Others" → free-text box
+    $("scopeOtherChk").addEventListener("change", () => {
+      const on = $("scopeOtherChk").checked;
+      $("scopeOtherBox").classList.toggle("hidden", !on);
+      $("scopeOther").required = on;
+      if (on) $("scopeOther").focus();
+    });
+    $("scopeBox").addEventListener("change", () => $("scopeBox").classList.remove("missing"));
+    const scopeValue = () => [...document.querySelectorAll('input[name="scope"]:checked')]
+      .map(c => c.value === "__other" ? clean($("scopeOther").value).toUpperCase() : c.value).filter(Boolean).join(", ");
     const roleValue = () => $("role").value === "__other" ? clean($("roleOther").value).toUpperCase() : $("role").value;
     // Choosing an Area fills in its Region (e.g. NCR → Luzon)
     $("area").addEventListener("change", () => { if (AREAS[$("area").value]) $("region").value = AREAS[$("area").value]; });
@@ -138,7 +159,7 @@
     const clean = (s) => s.trim().replace(/\s+/g, " ");
     // All free text is saved in UPPER CASE: "dela cruz" → "DELA CRUZ"
     const title = (s) => clean(s).toUpperCase();
-    forceUpper($("surname"), $("firstName"), $("mi"), $("roleOther"));
+    forceUpper($("surname"), $("firstName"), $("mi"), $("roleOther"), $("scopeOther"));
 
     // ---------- ID picture ----------
     // Photos are shrunk on the phone (max 1000px, JPEG) so each one is only ~50–150 KB.
@@ -236,6 +257,12 @@
 
     $("form").addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (!document.querySelector('input[name="scope"]:checked')) {
+        $("scopeBox").classList.add("missing");
+        $("msg").innerHTML = `<div class="alert error">Please choose your Scope of Work (tick all that apply).</div>`;
+        $("scopeBox").scrollIntoView({ block: "center" });
+        return;
+      }
       if (!photo) {
         $("photoBox").classList.add("missing");
         $("msg").innerHTML = `<div class="alert error">Please add your ID picture.</div>`;
@@ -245,12 +272,12 @@
       pending = {
         company: $("company").value, employment: $("employment").value,
         surname: title($("surname").value), firstName: title($("firstName").value),
-        mi: clean($("mi").value).replace(/\./g, "").toUpperCase(), role: roleValue(), area: $("area").value, region: $("region").value,
+        mi: clean($("mi").value).replace(/\./g, "").toUpperCase(), role: roleValue(), scope: scopeValue(), area: $("area").value, region: $("region").value,
       };
       // Step 2: review screen
       const rows = [
         ["Name", fullName(pending)], ["Company", pending.company], ["Employment", pending.employment],
-        ["Role", pending.role], ["Area", pending.area], ["Region", pending.region],
+        ["Role", pending.role], ["Scope of Work", pending.scope], ["Area", pending.area], ["Region", pending.region],
       ];
       $("reviewList").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
       $("reviewPhoto").src = photo;

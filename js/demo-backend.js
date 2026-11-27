@@ -113,6 +113,7 @@ const actions = {
       company: d.company, employment: d.employment, surname: title(d.surname), firstName: title(d.firstName),
       mi: String(d.mi || "").replace(/\./g, "").trim().toUpperCase(), role: d.role, region: d.region, area: d.area,
     };
+    const scope = String(d.scope || "").trim().slice(0, 200);
     for (const [k, v] of Object.entries(p)) if (k !== "mi" && !v) fail("missing_field", `${k} is required.`);
     if (!/^data:image\//.test(d.photo || "")) fail("photo_required", "Please add your ID picture.");
     const list = load("reg", []);
@@ -121,6 +122,7 @@ const actions = {
     const n = list.reduce((m, r) => Math.max(m, Number(r.uid.split("-").pop()) || 0), 0) + 1;
     p.uid = `${PREFIX}-${String(n).padStart(4, "0")}`;
     p.registeredAt = new Date().toISOString();
+    if (scope) p.scope = scope;
     list.push(p); save("reg", list);
     try { localStorage.setItem("demo2:photo:" + p.uid, d.photo); } catch { /* browser storage full — skip photo in demo */ }
     return { id: key(p), fullName: fullName(p), group: (list.length - 1) % 2 === 0 ? "P" : "T" };
