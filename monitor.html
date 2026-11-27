@@ -240,7 +240,7 @@
   <script type="module" src="js/header.js"></script>
   <script type="module">
     import { api, errorText, showDemoBanner } from "./js/api.js";
-    import { COMPANIES, REGIONS, ROLES, AREAS, EVENTS, todaysEvent } from "./js/config.js";
+    import { COMPANIES, REGIONS, ROLES, AREAS, EVENTS, REG_DAY_COUNTS, todaysEvent } from "./js/config.js";
     import { buildBoard, currentSession, esc, pill } from "./js/people.js";
     import { icon } from "./js/icons.js";
 
@@ -359,7 +359,20 @@
       $(fill).style.strokeDashoffset = String(326.73 * (1 - value / 100));
       $(label).textContent = value + "%";
     }
+    // Which day each person registered. The backend may send it (r.day); if not, it comes from the registration
+    // order: the first REG_DAY_COUNTS people belong to the finished days listed in config.js, everyone after = today
+    // (or, between events, the next evaluation day).
+    function withDays(rows) {
+      if (rows.some(r => r.day)) return rows;
+      const today = localToday(), all = EVENTS.flatMap(e => e.days).sort();
+      const last = REG_DAY_COUNTS.length ? REG_DAY_COUNTS[REG_DAY_COUNTS.length - 1][0] : "";
+      const after = all.includes(today) && today > last ? today : (all.find(d => d > last) || today);
+      let i = 0;
+      const marks = REG_DAY_COUNTS.flatMap(([d, n]) => Array(n).fill(d));
+      return rows.map(r => ({ ...r, day: marks[i++] || after }));
+    }
     function renderProgress(rows) {
+      rows = withDays(rows);
       const overall = progress(rows);
       setRing("ringFill", "ringPct", overall);
       $("ring").setAttribute("aria-label", `Overall progress, whole 2026 program: ${overall}% of evaluations completed`);

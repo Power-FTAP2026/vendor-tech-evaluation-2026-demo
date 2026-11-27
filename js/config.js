@@ -20,6 +20,13 @@ export const FEEDBACK_URL = ""; // demo website: feedback is never saved
 // MAINTENANCE NOTICE: until this moment (Philippine time) the real website shows a "under maintenance" cover on every page.
 // It switches off by itself at that time. Staff can still use the site by opening any page once with ?staff at the end.
 export const MAINTENANCE = { until: "2026-11-28T03:00:00+08:00", backBy: "3:00 AM" };
+
+// LIVE MONITORING, daily progress: how many people registered on each FINISHED evaluation day, in order.
+// The live list comes in registration order (top to bottom of the Registration tab), so the first 38 are Day 1, and so on.
+// Everyone after the listed days counts as today. After each evaluation day, add that day's final count here.
+export const REG_DAY_COUNTS = [
+  ["2026-11-27", 38], // Mindanao Day 1
+];
 export const LINKS = {
   sheet: "https://docs.google.com/spreadsheets/d/1EZZeUC1hAoFhFl8BjAgx6lt3n1vE-Ujz34KnoPbahp4/edit",
   drive: "https://drive.google.com/drive/folders/1Nh2C8AY5nLaSFCTqsJig-uTuRNn5_7cL",
