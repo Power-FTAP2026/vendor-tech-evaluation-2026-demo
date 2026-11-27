@@ -57,6 +57,8 @@
         <button type="button" class="secondary small" id="back" hidden><i data-icon="arrowLeft" data-size="16"></i> Stations</button>
       </div>
 
+      <div id="stTimer" class="st-timer" role="timer" aria-live="off"><div id="stSegs" class="st-segs"></div></div>
+
       <label for="techSearch">Technician being evaluated <span class="req">*</span></label>
       <div id="pickerBox">
         <div class="search-field"><i data-icon="search"></i>
@@ -69,13 +71,6 @@
         <button type="button" class="secondary small" id="changeTech">Change</button>
       </div>
       <div id="checklist" class="checklist hidden"></div>
-      <div id="stTimer" class="st-timer hidden" role="timer" aria-live="off">
-        <div id="stSegs" class="st-segs"></div>
-        <div class="st-actions">
-          <button type="button" class="small" id="stNext" hidden></button>
-          <button type="button" class="secondary small" id="stRestart" title="Start the current 10 minutes again"><i data-icon="refresh" data-size="15"></i> Restart</button>
-        </div>
-      </div>
       <div id="personNote"></div>
 
       <div id="scenarios"></div>
@@ -285,62 +280,77 @@
     });
     $("changeTech").onclick = () => { selected = null; renderPicked(); $("techSearch").focus(); };
 
-    // ---------- 10-minute timers (per technician, per station — and per part, e.g. 4.1 and 4.2) ----------
-    // Each "segment" (the whole station, or each part of it) has its own 10 minutes.
-    // Segment 1 starts when the technician is picked; the next one starts on its first score or the Start button,
-    // which also stops the previous segment. Start/stop times are kept in sessionStorage (survive a refresh).
+    // ---------- 10-minute timers (per station — and per part, e.g. 4.1 and 4.2) ----------
+    // Nothing starts by itself: the evaluator presses Start and Stop. Each part has its own 10 minutes.
+    // Start/stop times are kept in sessionStorage (they survive a refresh) and shown on the confirm and done pages.
+    // The timer never blocks scoring: the technician can be chosen and scores submitted at any time.
     const LIMIT_MS = PRACTICAL.minutesPerStation * 60000, WARN_MS = PRACTICAL.warnAtMinutes * 60000;
-    let timerBase = null, timerTick = null, alerted = {};
+    let alerted = {};
     const segments = () => {
       const parts = [...new Set(current.scenarios.map(s => s.part || ""))];
       return parts.length > 1 ? parts : [""];             // "" = the whole station
     };
-    const segOfScenario = (i) => Math.max(0, segments().indexOf(current.scenarios[i]?.part || ""));
-    const sKey = (k, what) => `${timerBase}:${k}:${what}`;   // what = "start" | "stop"
+    const sKey = (k, what) => `stTimer2:${current?.name}:${k}:${what}`;   // what = "start" | "stop"
     const getT = (k, what) => Number(sessionStorage.getItem(sKey(k, what))) || 0;
     const setT = (k, what, v) => v ? sessionStorage.setItem(sKey(k, what), String(v)) : sessionStorage.removeItem(sKey(k, what));
-    const activeSeg = () => { const n = segments().length; for (let k = n - 1; k >= 0; k--) if (getT(k, "start")) return k; return -1; };
+    const running = (k) => !!getT(k, "start") && !getT(k, "stop");
+    const clock = (t) => new Date(t).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+    const mmss = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
-    function startTimer() {
-      const base = `stTimer:${current?.name}:${selected?.id}`;
-      if (timerBase !== base) { timerBase = base; alerted = {}; }
-      if (activeSeg() < 0) setT(0, "start", Date.now());   // first part starts now
-      $("stTimer").classList.remove("hidden");
-      clearInterval(timerTick); tickTimer(); timerTick = setInterval(tickTimer, 500);
-    }
-    function startSegment(k) {
-      if (!timerBase || getT(k, "start")) return;
-      for (let j = 0; j < k; j++) { if (!getT(j, "start")) setT(j, "start", Date.now()); if (!getT(j, "stop")) setT(j, "stop", Date.now()); }
-      setT(k, "start", Date.now());
+    function renderTimer() {                                // builds the timer for the current station
+      const segs = segments();
+      $("stSegs").innerHTML = segs.map((label, k) => `
+        <div class="st-seg" data-k="${k}">
+          <div class="st-seg-main"><span class="st-timer-label">${esc(label || "Station timer")} · ${PRACTICAL.minutesPerStation} min</span>
+            <span class="st-timer-clock"></span></div>
+          <div class="st-btns">
+            <button type="button" class="small st-start" data-k="${k}"></button>
+            <button type="button" class="small secondary st-stop" data-k="${k}">Stop</button>
+          </div>
+          <div class="st-log"></div>
+        </div>`).join("");
+      $("stTimer").classList.toggle("multi", segs.length > 1);
       tickTimer();
     }
-    function stopTimer(forget = false) {
-      clearInterval(timerTick); timerTick = null;
-      if (forget && timerBase && current) segments().forEach((_, k) => { setT(k, "start", 0); setT(k, "stop", 0); });
-      timerBase = null;
-      $("stTimer").classList.add("hidden");
-    }
-    const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
-
     function tickTimer() {
-      if (!timerBase || !current) return;
-      const segs = segments(), act = activeSeg();
-      $("stSegs").innerHTML = segs.map((label, k) => {
-        const start = getT(k, "start"), stop = getT(k, "stop");
-        const name = esc(label || "Time left at this station");
-        if (!start) return `<div class="st-seg waiting"><span class="st-timer-label">${name}</span><span class="st-timer-clock">${mmss(LIMIT_MS)}</span></div>`;
-        if (stop) return `<div class="st-seg finished"><span class="st-timer-label">${name}</span><span class="st-used">✓ used ${mmss(stop - start)}</span></div>`;
-        const left = start + LIMIT_MS - Date.now();
-        if (left <= 0 && !alerted[k]) { alerted[k] = true; alertTimeUp(); }
-        const cls = left <= 0 ? "over" : left <= WARN_MS ? "warn" : "";
-        return `<div class="st-seg running ${cls}"><span class="st-timer-label">${name}</span><span class="st-timer-clock">${left > 0 ? mmss(left) : "Time's up"}</span></div>`;
-      }).join("");
-      const next = act + 1 < segs.length ? act + 1 : -1;
-      $("stNext").hidden = next < 0;
-      if (next >= 0) $("stNext").innerHTML = `${icon("play", 14)} Start ${esc(segs[next])}`;
-      $("stTimer").classList.toggle("multi", segs.length > 1);
+      if (!current || $("scoreForm").classList.contains("hidden")) return;
+      $("stSegs").querySelectorAll(".st-seg").forEach(el => {
+        const k = Number(el.dataset.k), start = getT(k, "start"), stop = getT(k, "stop");
+        const left = start ? start + LIMIT_MS - (stop || Date.now()) : LIMIT_MS;
+        if (start && !stop && left <= 0 && !alerted[k]) { alerted[k] = true; alertTimeUp(); }
+        el.className = "st-seg " + (!start ? "waiting" : stop ? "finished" : left <= 0 ? "running over" : left <= WARN_MS ? "running warn" : "running");
+        el.querySelector(".st-timer-clock").textContent = !start ? mmss(LIMIT_MS)
+          : stop ? `Stopped · used ${mmss(stop - start)}` : left > 0 ? mmss(left) : `Time's up +${mmss(-left)}`;
+        const startBtn = el.querySelector(".st-start"), label = start && stop ? "Start again" : "Start";
+        if (startBtn.dataset.label !== label) { startBtn.dataset.label = label; startBtn.innerHTML = `${icon("play", 14)} ${label}`; }
+        startBtn.hidden = running(k);
+        el.querySelector(".st-stop").hidden = !running(k);
+        const log = !start ? "" : `Start <b>${clock(start)}</b>` + (stop ? ` · Stop <b>${clock(stop)}</b>` : "");
+        const logEl = el.querySelector(".st-log"); if (logEl.innerHTML !== log) logEl.innerHTML = log;
+      });
     }
-    $("stNext").onclick = () => startSegment(activeSeg() + 1);
+    setInterval(tickTimer, 500);
+    $("stSegs").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      const k = Number(b.dataset.k), label = segments()[k] || "the station";
+      if (b.classList.contains("st-start")) {
+        if (getT(k, "stop") && !confirm(`Start the ${PRACTICAL.minutesPerStation} minutes for ${label} again? The last start and stop times will be replaced.`)) return;
+        segments().forEach((_, j) => { if (j !== k && running(j)) setT(j, "stop", Date.now()); }); // one part runs at a time
+        setT(k, "start", Date.now()); setT(k, "stop", 0); alerted[k] = false;
+      } else if (b.classList.contains("st-stop")) {
+        if (running(k)) setT(k, "stop", Date.now());
+      }
+      tickTimer();
+    });
+    function clearTimer() { if (current) segments().forEach((_, k) => { setT(k, "start", 0); setT(k, "stop", 0); }); alerted = {}; }
+    // e.g. "Start 9:02:10 AM · Stop 9:11:05 AM (8:55)" for the confirm and done pages
+    function timerLog() {
+      return segments().map((label, k) => {
+        const start = getT(k, "start"), stop = getT(k, "stop");
+        const txt = !start ? "not started" : `Start ${clock(start)} · ${stop ? `Stop ${clock(stop)} (${mmss(stop - start)})` : "still running"}`;
+        return (label ? label + ": " : "") + txt;
+      }).join(" | ");
+    }
     function alertTimeUp() {
       try { navigator.vibrate?.([300, 150, 300, 150, 300]); } catch { /* not supported */ }
       try { // three short beeps
@@ -352,15 +362,9 @@
         });
       } catch { /* audio blocked — the red timer is still shown */ }
     }
-    $("stRestart").onclick = () => {
-      const k = activeSeg(), label = segments()[k] || "this station";
-      if (k < 0 || !confirm(`Restart the 10 minutes for ${label}?`)) return;
-      setT(k, "start", Date.now()); setT(k, "stop", 0); alerted[k] = false; tickTimer();
-    };
 
     function renderPicked() {
       const has = !!selected;
-      if (has) startTimer(); else stopTimer();
       $("pickerBox").classList.toggle("hidden", has);
       $("picked").classList.toggle("hidden", !has);
       $("checklist").classList.toggle("hidden", !has);
@@ -386,7 +390,6 @@
       $("scenarios").classList.toggle("hidden", locked);
       ["total", "remarks", "saveBtn"].forEach(id => $(id).classList.toggle("hidden", locked));
       $("remarks").previousElementSibling?.classList.toggle("hidden", locked); // its label
-      if (locked) stopTimer();
     }
 
     // ---------- scoring ----------
@@ -426,7 +429,7 @@
       }).join("");
       watermark($("scenarios"), `${evaluator} · ${st.name}`); // "DO NOT SHARE" + evaluator + date over the scenarios
       renderPicked(); updateTotal();
-      show("scoreForm");
+      show("scoreForm"); renderTimer();
     }
 
     const maxTotal = () => current.scenarios.reduce((a, s) => a + Number(s.max), 0);
@@ -438,11 +441,7 @@
     }
     // First score entered for a technician → status "Live" on the dashboard.
     function onScore(e) {
-      if (e.target.dataset.i !== undefined) {
-        e.target.closest(".scen")?.classList.remove("missing");
-        const k = segOfScenario(Number(e.target.dataset.i));  // first score in 4.2 → start 4.2's 10 minutes
-        if (selected && k > activeSeg()) startSegment(k);
-      }
+      if (e.target.dataset.i !== undefined) e.target.closest(".scen")?.classList.remove("missing");
       updateTotal();
       if (!selected || liveSentFor === selected.id) return;
       liveSentFor = selected.id;
@@ -473,7 +472,7 @@
       // Step 2: confirmation page
       pending = { person: selected, scores, total: updateTotal(), max: maxTotal(), remarks: $("remarks").value.trim().toUpperCase() };
       $("confirmWho").innerHTML = [
-        ["Technician", fullName(selected)], ["Company", selected.company], ["Station", stationLabel(current)], ["Evaluator", evaluator],
+        ["Technician", fullName(selected)], ["Company", selected.company], ["Station", stationLabel(current)], ["Evaluator", evaluator], ["Timer", timerLog()],
       ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
       let part = null;
       $("confirmRows").innerHTML = current.scenarios.map(s => {
@@ -515,16 +514,17 @@
         recent.unshift({ time: new Date().toLocaleTimeString(), tech, cat: st.name, total, max });
         localStorage.setItem("recentScores", JSON.stringify(recent.slice(0, 30)));
         (person.stations ||= []).includes(st.name) || person.stations.push(st.name);
-        stopTimer(true);       // this technician is done here — clear their timer
+        const tlog = timerLog();
+        clearTimer();          // ready for the next technician
         pending = null;
-        $("doneText").innerHTML = `<b>${esc(tech)}</b> — <b>${total} / ${max}</b> at ${esc(stationLabel(st))}.`;
+        $("doneText").innerHTML = `<b>${esc(tech)}</b> — <b>${total} / ${max}</b> at ${esc(stationLabel(st))}.<br><span class="muted">Timer: ${esc(tlog)}</span>`;
         $("msg").innerHTML = ""; showDemoBanner($("msg"));
         show("donePage");
         loadPeople();
       } catch (err) {
         if (err.code === "already_scored") {
           (person.stations ||= []).includes(st.name) || person.stations.push(st.name);
-          stopTimer(true); pending = null;
+          pending = null;
           openStation(st);
           flash("error", esc(errorText(err)));
         } else {

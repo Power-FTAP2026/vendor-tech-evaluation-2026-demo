@@ -470,19 +470,23 @@ body.tv #peopleWrap th { position: sticky; top: 0; z-index: 1; }
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); box-shadow: 0 6px 12px -8px rgba(41, 24, 14, .18); }
 @media (max-width: 520px) { .st-timer { margin-left: -16px; margin-right: -16px; padding: 10px 16px; } }
 .st-segs { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
-.st-seg { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 10px; border: 1px solid transparent; }
-.st-timer.multi .st-seg { flex-direction: column; align-items: flex-start; gap: 0; border-color: var(--line); min-width: 150px; }
+.st-seg { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; flex: 1; min-width: 220px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line); }
+.st-seg-main { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+.st-btns { display: flex; gap: 6px; }
+.st-btns button[hidden] { display: none; }
+.st-log { flex-basis: 100%; font-size: .8rem; color: var(--muted); }
+.st-log:empty { display: none; }
 .st-actions { display: flex; gap: 6px; }
 .st-timer-label { color: var(--muted); font-size: .8rem; font-weight: 600; }
 .st-timer-clock { font-family: var(--head); font-size: 1.6rem; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.st-seg.waiting { opacity: .55; }
-.st-seg.waiting .st-timer-clock { font-size: 1.2rem; }
-.st-seg.finished .st-used { color: var(--ok); font-weight: 700; font-size: .95rem; }
+.st-seg.waiting .st-timer-clock { font-size: 1.2rem; opacity: .6; }
+.st-seg.finished { background: var(--ok-50); border-color: #c4e6d3; }
+.st-seg.finished .st-timer-clock { font-size: 1.2rem; color: var(--ok); }
 .st-seg.running { background: var(--surface-2); border-color: var(--line); }
 .st-seg.warn { background: var(--orange-50); border-color: var(--orange-100); }
 .st-seg.warn .st-timer-clock { color: var(--orange); }
 .st-seg.over { background: var(--err-50); border-color: #f3caca; }
-.st-seg.over .st-timer-clock { color: var(--crimson); font-weight: 700; animation: blink 1s infinite; }
+.st-seg.over .st-timer-clock { color: var(--crimson); font-weight: 700; font-size: 1.3rem; animation: blink 1s infinite; }
 
 /* technician search, picked card, station checklist */
 .tech-results { margin-top: 8px; display: grid; gap: 8px; }

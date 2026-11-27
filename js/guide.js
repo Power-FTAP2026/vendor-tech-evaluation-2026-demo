@@ -55,15 +55,15 @@ const GUIDES = {
     ] },
     { key: "station", when: "#pickerBox", steps: [
       ["#whoBar", "You", "Your name and station. Log out when you are finished."],
+      ["#stTimer", "10-minute timer", "Press Start when the technician begins and Stop when they finish. Nothing starts by itself. Each part has its own timer, and it warns you when 2 minutes are left. The start and stop times are shown on the confirm page. You can score and submit at any time."],
       ["#pickerBox", "Choose the technician", "First, type the technician's name and tap them in the list. Check the surname and company: names marked \"similar name\" look like someone else's. Technicians already scored at your station can't be chosen again."],
       ["#scenarios", "Scenarios", "Your station's scenarios. Score each one: Pass / Fail (5 or 0) or 0 to 5, as written on it."],
       ["#total", "Total", "The total updates as you score."],
       ["#remarks", "Remarks", "Optional notes about the technician."],
       ["#saveBtn", "Review & Submit", "Opens a confirmation page. After you submit there, the score is locked and can't be changed."],
     ] },
-    { key: "timer", when: "#stTimer", steps: [
+    { key: "timer", when: "#picked:not(.hidden)", steps: [
       ["#picked", "Technician", "The technician you are scoring. Tap Change if you picked the wrong person."],
-      ["#stTimer", "10-minute timer", "Each part has its own 10-minute timer. It warns you when 2 minutes are left. Restart begins the current 10 minutes again."],
     ] },
     { key: "confirm", when: "#confirmPage", steps: [
       ["#confirmRows", "Check the scores", "Make sure every score is right."],
