@@ -104,6 +104,8 @@
     .co-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
     .co-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--sh-1); }
     .co-today .bar > div { background: var(--orange); }
+    .co-today.is-over .bar > div { background: var(--crimson); }
+    .over-tag { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--crimson); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1.5; vertical-align: 1px; }
     .co-today .lbl b { color: #b43f14; }
     .co-card.all { background: linear-gradient(180deg, #fff, var(--surface-2)); border-color: var(--line-strong); }
     .co-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
@@ -111,7 +113,7 @@
     .co-reg { font-size: .8rem; color: var(--muted); white-space: nowrap; }
     .co-reg b { font-family: var(--head); font-size: 1.3rem; color: var(--ink); font-weight: 500; }
     .co-row { margin-top: 10px; }
-    .co-row .lbl { display: flex; justify-content: space-between; font-size: .8rem; color: var(--ink-2); margin-bottom: 5px; }
+    .co-row .lbl { display: flex; justify-content: space-between; gap: 6px; font-size: .8rem; color: var(--ink-2); margin-bottom: 5px; }
     .co-row .lbl b { color: var(--ink); }
     .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
     .bar > div { height: 100%; border-radius: 4px; background: var(--ok); transition: width .8s ease; }
@@ -411,7 +413,7 @@
       $("ringToday").setAttribute("aria-label", `Today's progress: ${progress(tRows)}% of evaluations completed`);
       const exp = expectedFor(today);
       $("todayCap").innerHTML = (tRows.length || exp.total)
-        ? `<b>${tRows.length}</b>${exp.total ? ` of <b>${exp.total}</b> expected` : " registered"}<br><b>${fullyDone(tRows)}</b> fully done`
+        ? `<b>${tRows.length}</b> of <b>${exp.total}</b> expected${tRows.length > exp.total ? ` <span class="over-tag">+${tRows.length - exp.total}</span>` : ""}<br><b>${fullyDone(tRows)}</b> fully done`
         : (isEventDay ? "No registrations yet today" : "No evaluation today");
 
       // one line per day that has registrations, oldest first (older rows without a date go under "Earlier")
@@ -431,8 +433,9 @@
       const todayLine = (list, expected) => {
         const n = list.filter(r => r.day === today).length;
         if (!expected && !n) return "";
-        return `<div class="co-row co-today"><div class="lbl"><span>Today</span><span><b>${n}</b>${expected ? ` / ${expected} expected` : " registered"}</span></div>
-          <div class="bar" title="Today: ${n}${expected ? " of " + expected + " expected" : " registered"}"><div style="width:${expected ? Math.min(100, pct(n, expected)) : 100}%"></div></div></div>`;
+        const over = Math.max(0, n - expected);   // more people than planned (or a company not expected today)
+        return `<div class="co-row co-today ${over ? "is-over" : ""}"><div class="lbl"><span>Today</span><span><b>${n}</b> / ${expected} expected${over ? ` <span class="over-tag">+${over}</span>` : ""}</span></div>
+          <div class="bar" title="Today: ${n} registered of ${expected} expected${over ? " (" + over + " more than expected)" : ""}"><div style="width:${expected ? Math.min(100, pct(n, expected)) : 100}%"></div></div></div>`;
       };
       const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
       const meter = (label, done, of) => `<div class="co-row"><div class="lbl"><span>${label}</span><span><b>${done}</b> / ${of}</span></div>

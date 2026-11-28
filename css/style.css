@@ -626,3 +626,6 @@ body.maint-on { overflow: hidden; }
 .scope-opt input { width: 20px; height: 20px; margin: 0; accent-color: var(--crimson); flex: none; }
 .scope-opt:has(input:checked) { border-color: var(--crimson); background: var(--crimson-50, #fdeeee); }
 .scope-box.missing .scope-opt { border-color: var(--err); }
+
+/* registered today > expected today (Dashboard / Live Monitoring) */
+.over-tag { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--crimson); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1.5; vertical-align: 1px; }

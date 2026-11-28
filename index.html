@@ -162,7 +162,9 @@
       const today = localToday(), exp = expectedFor(today);
       // today's attendance vs the plan, e.g. "5 / 13" (registered today / expected today)
       const todayCell = (list, expected) => { const n = list.filter(r => r.day === today).length;
-        return expected ? `<b>${n}</b> / ${expected}` : (n ? `<b>${n}</b>` : `<span class="muted">—</span>`); };
+        if (!expected && !n) return `<span class="muted">—</span>`;
+        const over = Math.max(0, n - expected); // more than planned (or a company not expected today)
+        return `<b>${n}</b> / ${expected}` + (over ? ` <span class="over-tag" title="${over} more than expected">+${over}</span>` : ""); };
       const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
       const line = (name, list) => `<tr><td class="co">${esc(name)}</td><td class="num" data-label="registered">${list.length}</td>
         <td class="num" data-label="today (registered / expected)">${todayCell(list, name === "All companies" ? exp.total : (exp.by[name] || 0))}</td>
