@@ -1,5 +1,27 @@
 // Participant helpers: names, AM/PM session, statuses and KPI calculations.
-import { SESSION } from "./config.js";
+import { SESSION, EVENTS, REG_DAY_COUNTS, EXPECTED } from "./config.js";
+
+/** Today's date "yyyy-mm-dd" in this device's time zone (Philippine time at the venue). */
+export const localToday = () => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+/** Which day each person registered. The backend may send it (r.day); if not, it comes from the registration
+ *  order: the first REG_DAY_COUNTS people belong to the finished days listed in config.js, everyone after = today
+ *  (or, between events, the next evaluation day). Rows must be in registration order (as the server sends them). */
+export function withDays(rows) {
+  if (rows.some(r => r.day)) return rows;
+  const today = localToday(), all = EVENTS.flatMap(e => e.days).sort();
+  const last = REG_DAY_COUNTS.length ? REG_DAY_COUNTS[REG_DAY_COUNTS.length - 1][0] : "";
+  const after = all.includes(today) && today > last ? today : (all.find(d => d > last) || today);
+  let i = 0;
+  const marks = REG_DAY_COUNTS.flatMap(([d, n]) => Array(n).fill(d));
+  return rows.map(r => ({ ...r, day: marks[i++] || after }));
+}
+
+/** Expected participants for a day: { company: n } and the day's total (0 when there's no plan for that day). */
+export function expectedFor(day) {
+  const by = EXPECTED[day] || {};
+  return { by, total: Object.values(by).reduce((a, b) => a + b, 0) };
+}
 
 /** "Dela Cruz, Juan P." */
 export function fullName(p) {

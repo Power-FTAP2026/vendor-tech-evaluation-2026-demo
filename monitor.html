@@ -103,6 +103,8 @@
     .mon-sec h2 { font-family: var(--head); font-weight: 500; font-size: 1.35rem; margin: 0; }
     .co-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
     .co-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--sh-1); }
+    .co-today .bar > div { background: var(--orange); }
+    .co-today .lbl b { color: #b43f14; }
     .co-card.all { background: linear-gradient(180deg, #fff, var(--surface-2)); border-color: var(--line-strong); }
     .co-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
     .co-name { font-weight: 700; font-size: 1rem; }
@@ -175,7 +177,7 @@
     /* participants fill the rest of the screen */
     body.fs .mon-people { margin-top: 10px; padding-bottom: 8px; }
     body.fs .mon-people .trk-head { margin-bottom: 6px; }
-    body.fs #peopleWrap { overflow-y: hidden; min-height: 180px; }
+    body.fs #peopleWrap { overflow-y: hidden; min-height: 150px; }
     body.fs #peopleWrap th { position: sticky; top: 0; z-index: 1; }
     body.fs .people-table { font-size: 1rem; }
     body.fs .people-table td, body.fs .people-table th { padding-top: 7px; padding-bottom: 7px; }
@@ -276,8 +278,8 @@
   <script type="module" src="js/header.js"></script>
   <script type="module">
     import { api, errorText, showDemoBanner } from "./js/api.js";
-    import { COMPANIES, REGIONS, ROLES, AREAS, EVENTS, REG_DAY_COUNTS, todaysEvent } from "./js/config.js";
-    import { buildBoard, currentSession, esc, pill } from "./js/people.js";
+    import { COMPANIES, REGIONS, ROLES, AREAS, EVENTS, todaysEvent } from "./js/config.js";
+    import { buildBoard, currentSession, esc, pill, withDays, localToday, expectedFor } from "./js/people.js";
     import { icon } from "./js/icons.js";
 
     const $ = (id) => document.getElementById(id);
@@ -362,7 +364,7 @@
 
       renderProgress(rows);
 
-      renderCompanies(rows);
+      renderCompanies(withDays(rows));
 
       const q = $("fSearch").value.trim().toLowerCase();
       const f = { company: $("fCompany").value, region: $("fRegion").value, area: $("fArea").value, role: $("fRole").value };
@@ -384,7 +386,6 @@
     // progress = theoretical + practical evaluations completed, out of 2 per registered technician
     const progress = (list) => pct(list.filter(r => r.theo === "Done").length + list.filter(r => r.prac === "Done").length, list.length * 2);
     const fullyDone = (list) => list.filter(r => r.theo === "Done" && r.prac === "Done").length;
-    const localToday = () => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
     const shortDate = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" });
     // "Mindanao · Day 1" for a date that belongs to an event (EVENTS in config.js)
     function dayName(d) {
@@ -394,18 +395,6 @@
     function setRing(fill, label, value) {
       $(fill).style.strokeDashoffset = String(326.73 * (1 - value / 100));
       $(label).textContent = value + "%";
-    }
-    // Which day each person registered. The backend may send it (r.day); if not, it comes from the registration
-    // order: the first REG_DAY_COUNTS people belong to the finished days listed in config.js, everyone after = today
-    // (or, between events, the next evaluation day).
-    function withDays(rows) {
-      if (rows.some(r => r.day)) return rows;
-      const today = localToday(), all = EVENTS.flatMap(e => e.days).sort();
-      const last = REG_DAY_COUNTS.length ? REG_DAY_COUNTS[REG_DAY_COUNTS.length - 1][0] : "";
-      const after = all.includes(today) && today > last ? today : (all.find(d => d > last) || today);
-      let i = 0;
-      const marks = REG_DAY_COUNTS.flatMap(([d, n]) => Array(n).fill(d));
-      return rows.map(r => ({ ...r, day: marks[i++] || after }));
     }
     function renderProgress(rows) {
       rows = withDays(rows);
@@ -420,7 +409,9 @@
       $("todayLabel").textContent = isEventDay ? `${dayName(today)} · ${shortDate(today)}` : shortDate(today);
       setRing("ringTFill", "ringTPct", progress(tRows));
       $("ringToday").setAttribute("aria-label", `Today's progress: ${progress(tRows)}% of evaluations completed`);
-      $("todayCap").innerHTML = tRows.length ? `<b>${tRows.length}</b> registered<br><b>${fullyDone(tRows)}</b> fully done`
+      const exp = expectedFor(today);
+      $("todayCap").innerHTML = (tRows.length || exp.total)
+        ? `<b>${tRows.length}</b>${exp.total ? ` of <b>${exp.total}</b> expected` : " registered"}<br><b>${fullyDone(tRows)}</b> fully done`
         : (isEventDay ? "No registrations yet today" : "No evaluation today");
 
       // one line per day that has registrations, oldest first (older rows without a date go under "Earlier")
@@ -436,13 +427,21 @@
     }
 
     function renderCompanies(rows) {
+      const today = localToday(), exp = expectedFor(today);
+      const todayLine = (list, expected) => {
+        const n = list.filter(r => r.day === today).length;
+        if (!expected && !n) return "";
+        return `<div class="co-row co-today"><div class="lbl"><span>Today</span><span><b>${n}</b>${expected ? ` / ${expected} expected` : " registered"}</span></div>
+          <div class="bar" title="Today: ${n}${expected ? " of " + expected + " expected" : " registered"}"><div style="width:${expected ? Math.min(100, pct(n, expected)) : 100}%"></div></div></div>`;
+      };
       const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
       const meter = (label, done, of) => `<div class="co-row"><div class="lbl"><span>${label}</span><span><b>${done}</b> / ${of}</span></div>
         <div class="bar" title="${esc(label)}: ${done} of ${of} (${pct(done, of)}%)"><div style="width:${pct(done, of)}%"></div></div></div>`;
       const card = (name, list, cls = "") => `<div class="co-card ${cls}">
         <div class="co-top"><span class="co-name">${esc(name)}</span><span class="co-reg"><b>${list.length}</b> registered</span></div>
         ${meter("Theoretical done", list.filter(r => r.theo === "Done").length, list.length)}
-        ${meter("Practical done", list.filter(r => r.prac === "Done").length, list.length)}</div>`;
+        ${meter("Practical done", list.filter(r => r.prac === "Done").length, list.length)}
+        ${todayLine(list, name === "All companies" ? exp.total : (exp.by[name] || 0))}</div>`;
       $("coGrid").innerHTML = companies.map(c => card(c, rows.filter(r => r.company === c))).join("") + card("All companies", rows, "all");
     }
 
@@ -459,7 +458,7 @@
       const w = $("peopleWrap");
       if (!document.body.classList.contains("fs")) { w.style.maxHeight = ""; scroller = null; return; }
       const top = w.getBoundingClientRect().top + scrollY, room = innerHeight - top - 26;
-      if (room >= 180) { w.style.maxHeight = room + "px"; w.style.overflowY = "hidden"; scroller = w; }
+      if (room >= 150) { w.style.maxHeight = room + "px"; w.style.overflowY = "hidden"; scroller = w; }
       else { w.style.maxHeight = "none"; w.style.overflowY = "visible"; scroller = document.scrollingElement; }
     }
     function setFs(on) {

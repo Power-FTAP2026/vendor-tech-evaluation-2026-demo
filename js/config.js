@@ -38,6 +38,17 @@ export const LINKS = {
 
 // Registration dropdowns
 export const COMPANIES = ["QNSI / QROI", "Edgecomm", "FMIDC", "IENG", "ARDOM"];
+
+// EXPECTED PARTICIPANTS per vendor, per evaluation day (from the "Summary of Participant" plan).
+// Shown on the Dashboard and Live Monitoring as "today: registered / expected". Company names must match COMPANIES.
+export const EXPECTED = {
+  "2026-11-27": { "QNSI / QROI": 15, "Edgecomm": 25 },                              // Mindanao Day 1 (40)
+  "2026-11-28": { "QNSI / QROI": 13, "Edgecomm": 13 },                              // Mindanao Day 2 (26)
+  "2026-11-30": { "QNSI / QROI": 10, "FMIDC": 7 },                                  // Visayas Day 1 (17)
+  "2026-12-01": { "QNSI / QROI": 13, "FMIDC": 6 },                                  // Visayas Day 2 (19)
+  "2026-12-02": { "IENG": 6, "ARDOM": 16, "FMIDC": 21, "Edgecomm": 10 },            // Luzon Day 1 (53)
+  "2026-12-03": { "IENG": 8, "ARDOM": 17, "FMIDC": 20, "Edgecomm": 11 },            // Luzon Day 2 (56)
+};
 export const EMPLOYMENT = ["Direct", "Subcon"];
 export const ROLES = ["Field Technician", "Lead Technician"];
 export const REGIONS = ["Luzon", "Visayas", "Mindanao"];

@@ -38,10 +38,10 @@
     </section>
 
     <section class="card" id="breakdownCard">
-      <div class="card-head"><h2>By Company</h2><span class="muted">Done = submitted theoretical · scored at all practical stations</span></div>
+      <div class="card-head"><h2>By Company</h2><span class="muted">Today = registered today / expected today · Done = submitted theoretical · scored at all practical stations</span></div>
       <div class="table-wrap">
         <table class="breakdown">
-          <thead><tr><th>Company</th><th class="num">Registered</th><th>Theoretical done</th><th>Practical done</th></tr></thead>
+          <thead><tr><th>Company</th><th class="num">Registered</th><th class="num" id="todayHead">Today</th><th>Theoretical done</th><th>Practical done</th></tr></thead>
           <tbody id="breakdown"></tbody>
         </table>
       </div>
@@ -76,7 +76,7 @@
   <script type="module">
     import { api, errorText, showDemoBanner } from "./js/api.js";
     import { COMPANIES, REGIONS, ROLES, AREAS } from "./js/config.js";
-    import { buildBoard, currentSession, esc, pill } from "./js/people.js";
+    import { buildBoard, currentSession, esc, pill, withDays, localToday, expectedFor } from "./js/people.js";
     import { icon } from "./js/icons.js";
 
     const $ = (id) => document.getElementById(id);
@@ -158,8 +158,14 @@
         <span class="meter-text"><b>${done}</b> / ${of}</span></div>`;
     }
     function renderBreakdown(rows) {
+      rows = withDays(rows);
+      const today = localToday(), exp = expectedFor(today);
+      // today's attendance vs the plan, e.g. "5 / 13" (registered today / expected today)
+      const todayCell = (list, expected) => { const n = list.filter(r => r.day === today).length;
+        return expected ? `<b>${n}</b> / ${expected}` : (n ? `<b>${n}</b>` : `<span class="muted">—</span>`); };
       const companies = [...COMPANIES, ...new Set(rows.map(r => r.company).filter(c => c && !COMPANIES.includes(c)))];
       const line = (name, list) => `<tr><td class="co">${esc(name)}</td><td class="num" data-label="registered">${list.length}</td>
+        <td class="num" data-label="today (registered / expected)">${todayCell(list, name === "All companies" ? exp.total : (exp.by[name] || 0))}</td>
         <td class="m" data-label="Theoretical">${bar(list.filter(r => r.theo === "Done").length, list.length, name + " · Theoretical done")}</td>
         <td class="m" data-label="Practical">${bar(list.filter(r => r.prac === "Done").length, list.length, name + " · Practical done")}</td></tr>`;
       $("breakdown").innerHTML = companies.map(c => line(c, rows.filter(r => r.company === c))).join("") +
